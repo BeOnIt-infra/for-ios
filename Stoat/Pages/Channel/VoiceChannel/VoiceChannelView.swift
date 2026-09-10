@@ -73,7 +73,7 @@ struct VoiceChannelView: View {
         let node = viewState.apiInfo!.features.livekit.nodes.first!
 
         let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
-        let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController)
+        let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController, replayRecorder: replayRecorder)
         let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: false))
 
         try! await room.connect(url: node.public_url, token: token.token)
@@ -111,6 +111,9 @@ struct VoiceChannelView: View {
             viewState.currentVoice = nil
             viewState.currentVoiceChannel = nil
 
+            if screenSharing {
+                BroadcastManager.shared.requestStop()
+            }
             replayRecorder.stop()
             annotationController.onSend = nil
 
@@ -264,7 +267,24 @@ struct VoiceChannelView: View {
                                 .padding(.vertical, 8)
                         }
                         
-                        Button { if inCall { screenSharing.toggle() } } label: {
+                        Button {
+                            guard inCall else { return }
+                            if screenSharing {
+                                BroadcastManager.shared.requestStop()
+                            } else {
+                                // Shows the system broadcast picker -- only
+                                // the system UI is allowed to start a
+                                // whole-device recording, an app can't
+                                // trigger it silently. Once the user picks
+                                // this app's extension and confirms, the
+                                // extension captures the whole screen (any
+                                // app, the home screen, everything) and
+                                // LiveKit auto-publishes it as our screen
+                                // share track -- see the isBroadcastingPublisher
+                                // handling below.
+                                BroadcastManager.shared.requestActivation()
+                            }
+                        } label: {
                             Image(systemName: "desktopcomputer")
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
@@ -347,24 +367,20 @@ struct VoiceChannelView: View {
                 }
             }
         })
-        .onChange(of: screenSharing, { @MainActor _, screenSharing in
-            if let room = viewState.currentVoice {
-                Task {
-                    if screenSharing, await AVAudioApplication.requestRecordPermission() {
-                        let publication = try! await room.localParticipant.set(source: .screenShareVideo, enabled: screenSharing, captureOptions: ScreenShareCaptureOptions(useBroadcastExtension: false, includeCurrentApplication: true))
-                        if let videoTrack = publication?.track as? VideoTrack {
-                            replayRecorder.start(track: videoTrack)
-                        }
-                    } else {
-                        replayRecorder.stop()
-                        if let micTrack = room.localParticipant.localVideoTracks.first {
-                            try! await room.localParticipant.unpublish(publication: micTrack)
-                        }
-                    }
-
-                }
+        .onReceive(BroadcastManager.shared.isBroadcastingPublisher) { isBroadcasting in
+            screenSharing = isBroadcasting
+            // Starting is handled by VoiceChannelDelegate.didPublishTrack,
+            // once the screen-share track the extension feeds actually
+            // appears. Stopping the broadcast (from here, Control Center,
+            // or the extension itself) doesn't automatically unpublish the
+            // track on its own, so that's done explicitly.
+            guard !isBroadcasting else { return }
+            replayRecorder.stop()
+            if let room = viewState.currentVoice,
+               let publication = room.localParticipant.localVideoTracks.first(where: { $0.source == .screenShareVideo }) {
+                Task { try? await room.localParticipant.unpublish(publication: publication) }
             }
-        })
+        }
         .onChange(of: updater, { _, _ in })
         .task {
             // resync state when view is reopened
@@ -384,10 +400,12 @@ struct VoiceChannelView: View {
 class VoiceChannelDelegate: RoomDelegate {
     @Binding var updater: Bool
     let annotationController: AnnotationController
+    let replayRecorder: ReplayBufferRecorder
 
-    init(updater: Binding<Bool>, annotationController: AnnotationController) {
+    init(updater: Binding<Bool>, annotationController: AnnotationController, replayRecorder: ReplayBufferRecorder) {
         self._updater = updater
         self.annotationController = annotationController
+        self.replayRecorder = replayRecorder
     }
     func roomDidConnect(_ room: Room) {
         print(room)
@@ -434,7 +452,19 @@ class VoiceChannelDelegate: RoomDelegate {
     func room(_ room: Room, participant: LocalParticipant, didPublishTrack publication: LocalTrackPublication) {
         print("local \(publication.kind), \(publication.source)")
         print(publication.track)
-        
+
+        if publication.source == .screenShareVideo, let videoTrack = publication.track as? VideoTrack {
+            replayRecorder.start(track: videoTrack)
+        }
+
+        self.updater.toggle()
+    }
+
+    func room(_ room: Room, participant: LocalParticipant, didUnpublishTrack publication: LocalTrackPublication) {
+        if publication.source == .screenShareVideo {
+            replayRecorder.stop()
+        }
+
         self.updater.toggle()
     }
     
