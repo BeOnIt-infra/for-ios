@@ -143,6 +143,9 @@
 		17E019DC2AF1B25100AB4663 /* SessionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E019DB2AF1B25100AB4663 /* SessionsSettings.swift */; };
 		17E28E082AF319D500F6069F /* AddServerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E28E072AF319D500F6069F /* AddServerSheet.swift */; };
 		17E346772CBC53A3000FBE6C /* AlertPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E346762CBC53A3000FBE6C /* AlertPopup.swift */; };
+		54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */; };
+		FD4721537FBB8DF8E2714B32 /* ReplayBufferRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */; };
+		BC3C589BEBA9335BEF78A659 /* ScreenShareTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */; };
 		17E5AA172CD8686D00C1EA19 /* ChannelPins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E5AA162CD8686800C1EA19 /* ChannelPins.swift */; };
 		17E72F832CACEAB8009E7C40 /* SwiftyCrop in Frameworks */ = {isa = PBXBuildFile; productRef = 17E72F822CACEAB8009E7C40 /* SwiftyCrop */; };
 		17F502542B9BFB1000A3022D /* AddFriend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F502532B9BFB1000A3022D /* AddFriend.swift */; };
@@ -344,6 +347,9 @@
 		17E019DB2AF1B25100AB4663 /* SessionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsSettings.swift; sourceTree = "<group>"; };
 		17E28E072AF319D500F6069F /* AddServerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddServerSheet.swift; sourceTree = "<group>"; };
 		17E346762CBC53A3000FBE6C /* AlertPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPopup.swift; sourceTree = "<group>"; };
+		9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlay.swift; sourceTree = "<group>"; };
+		D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayBufferRecorder.swift; sourceTree = "<group>"; };
+		0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenShareTile.swift; sourceTree = "<group>"; };
 		17E5AA162CD8686800C1EA19 /* ChannelPins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelPins.swift; sourceTree = "<group>"; };
 		17F502532B9BFB1000A3022D /* AddFriend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriend.swift; sourceTree = "<group>"; };
 		17F502552B9BFB2800A3022D /* CreateGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGroup.swift; sourceTree = "<group>"; };
@@ -549,6 +555,7 @@
 				17BC47692B9CB4F500A593DA /* Sheets */,
 				17CE783D2B129E0A006C1D2C /* Home */,
 				178BB1152B02E626001143A4 /* CommonElements */,
+				6C4EC6C035035D4D2E75969B /* Voice */,
 				178BB1092B02D0FE001143A4 /* AccountManagement */,
 				17E019D82AF1998800AB4663 /* MessageRenderer */,
 				DAAA4C0229F2548400F41E52 /* MessageBox.swift */,
@@ -622,6 +629,16 @@
 				17E346762CBC53A3000FBE6C /* AlertPopup.swift */,
 			);
 			path = CommonElements;
+			sourceTree = "<group>";
+		};
+		6C4EC6C035035D4D2E75969B /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */,
+				D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */,
+				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
+			);
+			path = Voice;
 			sourceTree = "<group>";
 		};
 		17BB78B62CA4C636000CAD87 /* ChannelPermissionsSettings */ = {
@@ -1155,6 +1172,9 @@
 				17CE78412B12AA51006C1D2C /* ServerChannelScrollView.swift in Sources */,
 				17E019C92AF1279100AB4663 /* AppearanceSettings.swift in Sources */,
 				17E346772CBC53A3000FBE6C /* AlertPopup.swift in Sources */,
+				54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */,
+				FD4721537FBB8DF8E2714B32 /* ReplayBufferRecorder.swift in Sources */,
+				BC3C589BEBA9335BEF78A659 /* ScreenShareTile.swift in Sources */,
 				1782F5E62B08F60B00759D40 /* Discovery.swift in Sources */,
 				17BB78B52CA4C45C000CAD87 /* ChannelPermissionsSettings.swift in Sources */,
 				17772C182C30AF83000D1EDA /* AppDelegate.swift in Sources */,
