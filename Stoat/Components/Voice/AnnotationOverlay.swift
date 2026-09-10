@@ -45,7 +45,8 @@ struct AnnotationLaser {
 }
 
 private let annotationColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6"]
-private let laserFadeSeconds: TimeInterval = 0.8
+/// Shared with AnnotationScreenshot's compositing in ReplayBufferRecorder.swift.
+let laserFadeSeconds: TimeInterval = 0.8
 /// Minimum movement before another point is sent, in normalised units --
 /// matches the web/Android overlays so all clients load the data channel
 /// the same way.
@@ -223,8 +224,8 @@ struct ScreenShareAnnotationOverlay: View {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 guard tool != .none, rect.width > 0, rect.height > 0 else { return }
-                let nx = min(max((value.location.x - rect.minX) / rect.width, 0), 1)
-                let ny = min(max((value.location.y - rect.minY) / rect.height, 0), 1)
+                let nx = Double(min(max((value.location.x - rect.minX) / rect.width, 0), 1))
+                let ny = Double(min(max((value.location.y - rect.minY) / rect.height, 0), 1))
 
                 if tool == .pen {
                     if let id = localStrokeId {

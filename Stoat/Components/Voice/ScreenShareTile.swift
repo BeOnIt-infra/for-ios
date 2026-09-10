@@ -91,8 +91,9 @@ struct ScreenShareTile: View {
                 return
             }
             Task.detached(priority: .userInitiated) {
-                let image = AnnotationScreenshot.composite(pixelBuffer: pixelBuffer, strokes: strokes, lasers: lasers)
-                _ = await image.map { await AnnotationScreenshot.save($0) }
+                if let image = AnnotationScreenshot.composite(pixelBuffer: pixelBuffer, strokes: strokes, lasers: lasers) {
+                    _ = await AnnotationScreenshot.save(image)
+                }
                 await MainActor.run { isCapturing = false }
             }
         }
