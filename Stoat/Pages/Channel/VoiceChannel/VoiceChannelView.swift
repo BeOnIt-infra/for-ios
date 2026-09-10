@@ -50,19 +50,47 @@ struct VoiceChannelView: View {
     @State var screenSharing: Bool = false
     @State var inCall: Bool = false
     @State var updater: Bool = false
-    
+
+    @StateObject private var annotationController = AnnotationController()
+    @StateObject private var replayRecorder = ReplayBufferRecorder()
+    @State private var showReplayMenu = false
+
+    /// Presets offered in the instant-replay duration menu, in seconds.
+    /// Kept in sync with ReplayBufferRecorder.maxClipSeconds (the longest
+    /// preset here bounds how much footage that buffer needs to retain).
+    private static let replayDurations: [Int] = [15, 30, 60, 120]
+
+    @State private var replayAlertMessage: String?
+
+    private func saveReplay(seconds: Int) {
+        replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { success in
+            replayAlertMessage = success ? "Clip saved" : "Couldn't save clip"
+        }
+    }
+
     @MainActor
     func connect() async {
         let node = viewState.apiInfo!.features.livekit.nodes.first!
-        
+
         let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
-        let dele = VoiceChannelDelegate(updater: $updater)
+        let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController)
         let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: false))
-        
+
         try! await room.connect(url: node.public_url, token: token.token)
-        
+
         viewState.currentVoiceChannel = channel.id
         viewState.currentVoice = room
+
+        annotationController.myId = room.localParticipant.identity?.stringValue ?? ""
+        annotationController.onSend = { [weak room] payload, reliable in
+            guard let room, let data = try? JSONSerialization.data(withJSONObject: payload) else { return }
+            Task {
+                try? await room.localParticipant.publish(
+                    data: data,
+                    options: DataPublishOptions(topic: "annotate", reliable: reliable)
+                )
+            }
+        }
         
 //        let pfp = URL(string: viewState.currentUser!.avatar != nil ? viewState.formatUrl(with: viewState.currentUser!.avatar!) : "\(viewState.http.baseURL)/users/\(viewState.currentUser!.id)/default_avatar")!;
         
@@ -82,6 +110,9 @@ struct VoiceChannelView: View {
         if let room = viewState.currentVoice {
             viewState.currentVoice = nil
             viewState.currentVoiceChannel = nil
+
+            replayRecorder.stop()
+            annotationController.onSend = nil
 
             await room.disconnect()
         }
@@ -149,8 +180,13 @@ struct VoiceChannelView: View {
                                     VoiceChannelBox(title: title) {
                                         let _ = print(track.source, track.kind, track.isSubscribed)
                                         if track is LocalTrackPublication || track.isSubscribed {
-                                            SwiftUIVideoView(track.track as! VideoTrack, layoutMode: .fit)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            let videoTrack = track.track as! VideoTrack
+                                            if track.source == .screenShareVideo {
+                                                ScreenShareTile(videoTrack: videoTrack, annotationController: annotationController)
+                                            } else {
+                                                SwiftUIVideoView(videoTrack, layoutMode: .fit)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            }
                                         } else if let remoteTrack = track as? RemoteTrackPublication {
                                             ZStack {
                                                 viewState.theme.background3
@@ -233,7 +269,23 @@ struct VoiceChannelView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                         }
-                        
+
+                        if screenSharing && replayRecorder.isAvailable {
+                            Menu {
+                                ForEach(Self.replayDurations, id: \.self) { seconds in
+                                    Button {
+                                        saveReplay(seconds: seconds)
+                                    } label: {
+                                        Text(seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m")
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "film")
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                            }
+                        }
+
                         Button { inCall.toggle() } label: {
                             Text(inCall ? "Leave Call" : "Join Call")
                                 .font(.subheadline)
@@ -299,9 +351,15 @@ struct VoiceChannelView: View {
             if let room = viewState.currentVoice {
                 Task {
                     if screenSharing, await AVAudioApplication.requestRecordPermission() {
-                        try! await room.localParticipant.set(source: .screenShareVideo, enabled: screenSharing, captureOptions: ScreenShareCaptureOptions(useBroadcastExtension: false, includeCurrentApplication: true))
-                    } else if let micTrack = room.localParticipant.localVideoTracks.first {
-                        try! await room.localParticipant.unpublish(publication: micTrack)
+                        let publication = try! await room.localParticipant.set(source: .screenShareVideo, enabled: screenSharing, captureOptions: ScreenShareCaptureOptions(useBroadcastExtension: false, includeCurrentApplication: true))
+                        if let videoTrack = publication?.track as? VideoTrack {
+                            replayRecorder.start(track: videoTrack)
+                        }
+                    } else {
+                        replayRecorder.stop()
+                        if let micTrack = room.localParticipant.localVideoTracks.first {
+                            try! await room.localParticipant.unpublish(publication: micTrack)
+                        }
                     }
 
                 }
@@ -314,17 +372,36 @@ struct VoiceChannelView: View {
                 inCall = true
             }
         }
+        .alert(replayAlertMessage ?? "", isPresented: Binding(
+            get: { replayAlertMessage != nil },
+            set: { shown in if !shown { replayAlertMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        }
     }
 }
 
 class VoiceChannelDelegate: RoomDelegate {
     @Binding var updater: Bool
-    
-    init(updater: Binding<Bool>) {
+    let annotationController: AnnotationController
+
+    init(updater: Binding<Bool>, annotationController: AnnotationController) {
         self._updater = updater
+        self.annotationController = annotationController
     }
     func roomDidConnect(_ room: Room) {
         print(room)
+    }
+
+    func room(_ room: Room, participant: RemoteParticipant?, didReceiveData data: Data, forTopic topic: String, encryptionType: EncryptionType) {
+        guard topic == "annotate" else { return }
+        // Without a verified sender the annotation can't be attributed to
+        // anyone, so drop it rather than trusting the payload.
+        guard let sender = participant?.identity?.stringValue else { return }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        Task { @MainActor in
+            self.annotationController.applyEvent(json, senderId: sender)
+        }
     }
     
     func roomDidReconnect(_ room: Room) {
