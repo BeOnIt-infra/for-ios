@@ -60,7 +60,7 @@ struct ScreenShareTile: View {
     let videoTrack: VideoTrack
     @ObservedObject var annotationController: AnnotationController
 
-    @StateObject private var frameHolder = LatestFrameHolder()
+    @State private var frameHolder = LatestFrameHolder()
     @State private var isCapturing = false
 
     var body: some View {
