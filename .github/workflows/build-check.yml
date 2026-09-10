@@ -38,7 +38,6 @@ jobs:
           xcodebuild build \
             -scheme Stoat \
             -project Stoat.xcodeproj \
-            -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -skipPackagePluginValidation \
             -skipMacroValidation \
