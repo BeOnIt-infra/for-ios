@@ -55,6 +55,15 @@ struct VoiceChannelView: View {
     @StateObject private var replayRecorder = ReplayBufferRecorder()
     @State private var showReplayMenu = false
 
+    /// `BroadcastManager.isBroadcastingPublisher` is computed -- it calls
+    /// eraseToAnyPublisher() and hands back a fresh AnyPublisher every time
+    /// it's read. Reading it inline in the body gave onReceive a different
+    /// publisher on every pass, so SwiftUI resubscribed, the subject
+    /// replayed, the closure ran, and the view invalidated again: a render
+    /// loop that pinned a core at 100%. Held in @State so the identity is
+    /// stable for the life of the view.
+    @State private var broadcastPublisher = BroadcastManager.shared.isBroadcastingPublisher
+
     /// Presets offered in the instant-replay duration menu, in seconds.
     /// Kept in sync with ReplayBufferRecorder.maxClipSeconds (the longest
     /// preset here bounds how much footage that buffer needs to retain).
@@ -375,7 +384,13 @@ struct VoiceChannelView: View {
                 }
             }
         })
-        .onReceive(BroadcastManager.shared.isBroadcastingPublisher) { isBroadcasting in
+        .onReceive(broadcastPublisher) { isBroadcasting in
+            // Only act on an actual transition. The subject replays its
+            // current value to every new subscriber, so without this an
+            // emission that changes nothing still writes @State -- and a
+            // @State write always invalidates, even when the value is
+            // identical.
+            guard screenSharing != isBroadcasting else { return }
             screenSharing = isBroadcasting
             // Starting is handled by VoiceChannelDelegate.didPublishTrack,
             // once the screen-share track the extension feeds actually
