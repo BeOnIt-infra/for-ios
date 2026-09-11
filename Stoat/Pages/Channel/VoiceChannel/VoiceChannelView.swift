@@ -267,6 +267,13 @@ struct VoiceChannelView: View {
                                 .padding(.vertical, 8)
                         }
                         
+                        // Presenting needs the ReplayKit broadcast extension,
+                        // which exists only on iOS -- a Mac Catalyst build
+                        // has no way to start one, so it gets no button
+                        // rather than one that silently does nothing. Viewing,
+                        // annotating and capturing someone else's share all
+                        // still work there.
+                        #if !targetEnvironment(macCatalyst)
                         Button {
                             guard inCall else { return }
                             if screenSharing {
@@ -289,6 +296,7 @@ struct VoiceChannelView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                         }
+                        #endif
 
                         if screenSharing && replayRecorder.isAvailable {
                             Menu {

@@ -27,8 +27,17 @@ final class LatestFrameHolder: NSObject, VideoRenderer {
     var isAdaptiveStreamEnabled: Bool { false }
     var adaptiveStreamSize: CGSize { .zero }
 
+    /// The buffers WebRTC hands `render(frame:)` come from a recycling pool
+    /// and get overwritten once the callback returns, so the retained frame
+    /// has to be our own copy or a capture would composite whatever the
+    /// decoder happened to write into it since. Copying every frame is far
+    /// more memcpy than a screenshot button needs, hence the sampling --
+    /// the captured frame is at most this far behind live.
+    private static let sampleInterval: CFAbsoluteTime = 1.0 / 4.0
+
     private let queue = DispatchQueue(label: "chat.stoat.latestframe")
     private var latest: CVPixelBuffer?
+    private var lastSampleTime: CFAbsoluteTime = 0
     private weak var track: VideoTrack?
 
     func attach(to track: VideoTrack) {
@@ -45,7 +54,55 @@ final class LatestFrameHolder: NSObject, VideoRenderer {
 
     func render(frame: LiveKit.VideoFrame) {
         guard let pixelBuffer = (frame.buffer as? CVPixelVideoBuffer)?.pixelBuffer else { return }
-        queue.async { [weak self] in self?.latest = pixelBuffer }
+        let now = CFAbsoluteTimeGetCurrent()
+        // Sampled on the delivery thread, and copied there too: by the time
+        // a `queue.async` block ran the pool could already have reused it.
+        guard now - lastSampleTime >= Self.sampleInterval else { return }
+        lastSampleTime = now
+        guard let copy = Self.deepCopy(pixelBuffer) else { return }
+        queue.async { [weak self] in self?.latest = copy }
+    }
+
+    private static func deepCopy(_ source: CVPixelBuffer) -> CVPixelBuffer? {
+        var created: CVPixelBuffer?
+        let attributes: [CFString: Any] = [kCVPixelBufferIOSurfacePropertiesKey: [:] as CFDictionary]
+        guard CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            CVPixelBufferGetWidth(source),
+            CVPixelBufferGetHeight(source),
+            CVPixelBufferGetPixelFormatType(source),
+            attributes as CFDictionary,
+            &created
+        ) == kCVReturnSuccess, let destination = created else { return nil }
+
+        guard CVPixelBufferLockBaseAddress(source, .readOnly) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(source, .readOnly) }
+        guard CVPixelBufferLockBaseAddress(destination, []) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(destination, []) }
+
+        let planeCount = CVPixelBufferGetPlaneCount(source)
+        if planeCount == 0 {
+            guard let from = CVPixelBufferGetBaseAddress(source),
+                  let to = CVPixelBufferGetBaseAddress(destination) else { return nil }
+            let fromStride = CVPixelBufferGetBytesPerRow(source)
+            let toStride = CVPixelBufferGetBytesPerRow(destination)
+            let rowBytes = min(fromStride, toStride)
+            for row in 0 ..< CVPixelBufferGetHeight(source) {
+                memcpy(to + row * toStride, from + row * fromStride, rowBytes)
+            }
+        } else {
+            for plane in 0 ..< planeCount {
+                guard let from = CVPixelBufferGetBaseAddressOfPlane(source, plane),
+                      let to = CVPixelBufferGetBaseAddressOfPlane(destination, plane) else { return nil }
+                let fromStride = CVPixelBufferGetBytesPerRowOfPlane(source, plane)
+                let toStride = CVPixelBufferGetBytesPerRowOfPlane(destination, plane)
+                let rowBytes = min(fromStride, toStride)
+                for row in 0 ..< CVPixelBufferGetHeightOfPlane(source, plane) {
+                    memcpy(to + row * toStride, from + row * fromStride, rowBytes)
+                }
+            }
+        }
+        return destination
     }
 
     func capture(completion: @escaping (CVPixelBuffer?) -> Void) {
@@ -72,10 +129,17 @@ struct ScreenShareTile: View {
                 controller: annotationController,
                 videoWidth: CGFloat(videoTrack.dimensions?.width ?? 0),
                 videoHeight: CGFloat(videoTrack.dimensions?.height ?? 0),
-                onCapture: isCapturing ? nil : handleCapture
+                onCapture: handleCapture,
+                captureDisabled: isCapturing
             )
         }
         .onAppear { frameHolder.attach(to: videoTrack) }
+        // A participant republishing their share swaps the track under a
+        // tile that never disappeared, so onAppear alone would leave the
+        // holder feeding off the old, now-dead one.
+        .onChange(of: ObjectIdentifier(videoTrack)) { _, _ in
+            frameHolder.attach(to: videoTrack)
+        }
         .onDisappear { frameHolder.detach() }
     }
 

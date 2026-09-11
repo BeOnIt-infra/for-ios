@@ -67,14 +67,13 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
     private var segmentDeadline: CFAbsoluteTime = 0
     private var segmentURLs: [URL] = []
     private var lastFeedTime: CFAbsoluteTime = 0
-    private var latestPixelBuffer: CVPixelBuffer?
 
     // MARK: Lifecycle
 
     func start(track: VideoTrack) {
         track.add(videoRenderer: self)
         self.track = track
-        isAvailable = true
+        setAvailable(true)
         queue.async { [weak self] in
             self?.stopLocked()
             self?.startSegmentLocked()
@@ -84,9 +83,21 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
     func stop() {
         if let track { track.remove(videoRenderer: self) }
         track = nil
-        isAvailable = false
+        setAvailable(false)
         queue.async { [weak self] in
             self?.stopLocked()
+        }
+    }
+
+    /// start/stop are driven by RoomDelegate track callbacks, which LiveKit
+    /// delivers on its own queue rather than the main one -- touching an
+    /// @Published from there trips SwiftUI's "publishing changes from
+    /// background threads" check, so the hop to main is mandatory.
+    private func setAvailable(_ value: Bool) {
+        if Thread.isMainThread {
+            isAvailable = value
+        } else {
+            DispatchQueue.main.async { [weak self] in self?.isAvailable = value }
         }
     }
 
@@ -96,7 +107,6 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
         currentSegmentURL = nil
         for url in segmentURLs { try? FileManager.default.removeItem(at: url) }
         segmentURLs = []
-        latestPixelBuffer = nil
     }
 
     private func startSegmentLocked() {
@@ -161,7 +171,6 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
         let now = CFAbsoluteTimeGetCurrent()
         guard now - lastFeedTime >= 1.0 / Self.targetFPS else { return }
         lastFeedTime = now
-        latestPixelBuffer = pixelBuffer
 
         guard writer != nil else { return }
 
@@ -199,18 +208,6 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
         pixelAdaptor?.append(pixelBuffer, withPresentationTime: timestamp)
     }
 
-    // MARK: Screenshot capture
-
-    /// Latest buffered frame, for the annotation toolbar's capture button.
-    /// Only available while the buffer is running (i.e. while screen
-    /// sharing), same as on the other platforms.
-    func captureLatestFrame(completion: @escaping (CVPixelBuffer?) -> Void) {
-        queue.async { [weak self] in
-            let buffer = self?.latestPixelBuffer
-            DispatchQueue.main.async { completion(buffer) }
-        }
-    }
-
     // MARK: Save
 
     func saveReplay(seconds: TimeInterval, completion: @escaping (Bool) -> Void) {
@@ -235,18 +232,38 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
             }
             self.startSegmentLocked()
 
-            // Snapshot for export -- these files remain part of the live
-            // rolling buffer afterward (subject to the normal maxSegments
-            // eviction), they are not consumed or deleted by a save.
-            let segments = self.segmentURLs
+            // Recording continues during the export, and the rolling buffer
+            // deletes segments as it evicts them -- an export reading the
+            // live files directly would have them pulled out from under it
+            // (a 120s clip easily outlives several 5s evictions). Hard-link
+            // each one into a private directory instead: costs no disk, and
+            // the data stays alive for the export even once the buffer has
+            // unlinked its own copy.
+            let stagingDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("beonit-replay-export-\(UUID().uuidString)")
+            var segments: [URL] = []
+            do {
+                try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
+                for url in self.segmentURLs {
+                    let link = stagingDir.appendingPathComponent(url.lastPathComponent)
+                    try FileManager.default.linkItem(at: url, to: link)
+                    segments.append(link)
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: stagingDir)
+                DispatchQueue.main.async { completion(false) }
+                return
+            }
 
             guard !segments.isEmpty else {
+                try? FileManager.default.removeItem(at: stagingDir)
                 DispatchQueue.main.async { completion(false) }
                 return
             }
 
             let clipSeconds = min(max(seconds, 1), Self.maxClipSeconds)
             Self.exportClip(segments: segments, clipSeconds: clipSeconds) { success in
+                try? FileManager.default.removeItem(at: stagingDir)
                 DispatchQueue.main.async { completion(success) }
             }
         }
@@ -285,7 +302,17 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
             let start = max(CMTime.zero, composition.duration - clipDuration)
             let trimRange = CMTimeRange(start: start, end: composition.duration)
 
-            guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+            // Passthrough really is a plain concat/trim: it rewrites the
+            // container without touching the H.264 the segments already
+            // hold. HighestQuality would re-encode every frame (slow for a
+            // 120s clip) and conforms the result to the preset's own
+            // dimensions, which distorts the unusual aspect ratios a device
+            // screen recording produces. Fall back to it only if the
+            // composition somehow can't be passed through.
+            let preset = AVAssetExportPresetPassthrough
+            guard let export = AVAssetExportSession(asset: composition, presetName: preset)
+                ?? AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality)
+            else {
                 completion(false)
                 return
             }

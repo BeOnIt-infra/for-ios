@@ -166,6 +166,11 @@ struct ScreenShareAnnotationOverlay: View {
     var videoHeight: CGFloat
     /// Fires when the capture (screenshot) toolbar button is tapped.
     var onCapture: (() -> Void)?
+    /// Greys the capture button out while a save is in flight. Kept separate
+    /// from `onCapture` being nil, which hides the button entirely -- doing
+    /// that mid-capture would shuffle the whole toolbar under the user's
+    /// finger every time they took a screenshot.
+    var captureDisabled: Bool = false
 
     private enum Tool { case none, pen, laser }
 
@@ -285,6 +290,8 @@ struct ScreenShareAnnotationOverlay: View {
             }
             if let onCapture {
                 toolButton(systemName: "camera", selected: false, action: onCapture)
+                    .disabled(captureDisabled)
+                    .opacity(captureDisabled ? 0.4 : 1)
             }
         }
         .padding(.horizontal, 8)
