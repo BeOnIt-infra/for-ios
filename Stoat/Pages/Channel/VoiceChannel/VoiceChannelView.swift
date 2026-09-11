@@ -69,11 +69,30 @@ struct VoiceChannelView: View {
     /// preset here bounds how much footage that buffer needs to retain).
     private static let replayDurations: [Int] = [15, 30, 60, 120]
 
-    @State private var replayAlertMessage: String?
+    @State private var callAlertMessage: String?
+
+    /// Why the broadcast picker would do nothing if we asked for it, or nil
+    /// when presenting should work.
+    private var screenShareUnavailableReason: String? {
+        #if targetEnvironment(simulator)
+        // ReplayKit.framework ships in the simulator runtime, so this all
+        // compiles and RPSystemBroadcastPickerView instantiates happily --
+        // but replayd, the daemon that actually hosts broadcast extensions,
+        // is not in the runtime at all. The picker has nothing behind it.
+        return "Screen sharing needs a real device. The Simulator has no ReplayKit broadcast service."
+        #else
+        // False when the app group container is missing (an unsigned build,
+        // or entitlements without the App Groups capability) or when
+        // RTCScreenSharingExtension isn't set -- either way LiveKit can't
+        // reach the extension over its shared-container socket.
+        guard !ScreenShareCaptureOptions.defaultToBroadcastExtension else { return nil }
+        return "Screen sharing isn't set up in this build: the broadcast extension or its App Group is missing."
+        #endif
+    }
 
     private func saveReplay(seconds: Int) {
         replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { success in
-            replayAlertMessage = success ? "Clip saved" : "Couldn't save clip"
+            callAlertMessage = success ? "Clip saved" : "Couldn't save clip"
         }
     }
 
@@ -287,6 +306,13 @@ struct VoiceChannelView: View {
                             guard inCall else { return }
                             if screenSharing {
                                 BroadcastManager.shared.requestStop()
+                            } else if let reason = screenShareUnavailableReason {
+                                // requestActivation() just asks the system to
+                                // put up the picker and returns; when nothing
+                                // can service that request it fails silently,
+                                // leaving a button that looks broken. Say why
+                                // instead.
+                                callAlertMessage = reason
                             } else {
                                 // Shows the system broadcast picker -- only
                                 // the system UI is allowed to start a
@@ -411,9 +437,9 @@ struct VoiceChannelView: View {
                 inCall = true
             }
         }
-        .alert(replayAlertMessage ?? "", isPresented: Binding(
-            get: { replayAlertMessage != nil },
-            set: { shown in if !shown { replayAlertMessage = nil } }
+        .alert(callAlertMessage ?? "", isPresented: Binding(
+            get: { callAlertMessage != nil },
+            set: { shown in if !shown { callAlertMessage = nil } }
         )) {
             Button("OK", role: .cancel) {}
         }
