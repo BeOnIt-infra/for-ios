@@ -90,6 +90,42 @@ struct VoiceChannelView: View {
         #endif
     }
 
+    #if targetEnvironment(macCatalyst)
+    /// Held for the life of the view: the capturer owns the SCStream and the
+    /// published track, so losing it mid-share would strand both.
+    @State private var macScreenShare = MacScreenShareHolder()
+
+    private func toggleMacScreenShare() {
+        guard #available(macCatalyst 18.2, *) else {
+            callAlertMessage = MacScreenShareError.unsupported.errorDescription
+            return
+        }
+        guard let room = viewState.currentVoice else { return }
+        let capturer = macScreenShare.capturer
+
+        if screenSharing {
+            Task {
+                await capturer.stopAndUnpublish(from: room)
+                screenSharing = false
+                replayRecorder.stop()
+            }
+        } else {
+            Task {
+                do {
+                    try await capturer.start(in: room)
+                    screenSharing = true
+                } catch {
+                    // Denying Screen Recording surfaces here as a
+                    // ScreenCaptureKit error rather than a permission
+                    // callback, so report whatever it says.
+                    callAlertMessage = error.localizedDescription
+                    screenSharing = false
+                }
+            }
+        }
+    }
+    #endif
+
     private func saveReplay(seconds: Int) {
         replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { success in
             callAlertMessage = success ? "Clip saved" : "Couldn't save clip"
@@ -140,7 +176,17 @@ struct VoiceChannelView: View {
             viewState.currentVoiceChannel = nil
 
             if screenSharing {
+                #if targetEnvironment(macCatalyst)
+                if #available(macCatalyst 18.2, *) {
+                    // Leaving the call has to tear the SCStream down too,
+                    // or the screen keeps being captured after the room is
+                    // gone -- with the system recording indicator still lit.
+                    await macScreenShare.capturer.stopAndUnpublish(from: room)
+                }
+                #else
                 BroadcastManager.shared.requestStop()
+                #endif
+                screenSharing = false
             }
             replayRecorder.stop()
             annotationController.onSend = nil
@@ -295,15 +341,16 @@ struct VoiceChannelView: View {
                                 .padding(.vertical, 8)
                         }
                         
-                        // Presenting needs the ReplayKit broadcast extension,
-                        // which exists only on iOS -- a Mac Catalyst build
-                        // has no way to start one, so it gets no button
-                        // rather than one that silently does nothing. Viewing,
-                        // annotating and capturing someone else's share all
-                        // still work there.
-                        #if !targetEnvironment(macCatalyst)
+                        // Two different mechanisms behind one button: iOS
+                        // hands the whole device to a ReplayKit broadcast
+                        // extension, Mac captures a display in-process with
+                        // ScreenCaptureKit. They share no API at all, only
+                        // the resulting screen-share track.
                         Button {
                             guard inCall else { return }
+                            #if targetEnvironment(macCatalyst)
+                            toggleMacScreenShare()
+                            #else
                             if screenSharing {
                                 BroadcastManager.shared.requestStop()
                             } else if let reason = screenShareUnavailableReason {
@@ -326,12 +373,12 @@ struct VoiceChannelView: View {
                                 // handling below.
                                 BroadcastManager.shared.requestActivation()
                             }
+                            #endif
                         } label: {
-                            Image(systemName: "desktopcomputer")
+                            Image(systemName: screenSharing ? "desktopcomputer.and.arrow.down" : "desktopcomputer")
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                         }
-                        #endif
 
                         if screenSharing && replayRecorder.isAvailable {
                             Menu {
@@ -411,6 +458,13 @@ struct VoiceChannelView: View {
             }
         })
         .onReceive(broadcastPublisher) { isBroadcasting in
+            // Mac drives screenSharing from its own ScreenCaptureKit
+            // capturer; this publisher only ever reports the iOS broadcast
+            // extension, so letting it through there would tear down a Mac
+            // share the moment it reported "not broadcasting".
+            #if targetEnvironment(macCatalyst)
+            return
+            #else
             // Only act on an actual transition. The subject replays its
             // current value to every new subscriber, so without this an
             // emission that changes nothing still writes @State -- and a
@@ -429,6 +483,7 @@ struct VoiceChannelView: View {
                let publication = room.localParticipant.localVideoTracks.first(where: { $0.source == .screenShareVideo }) {
                 Task { try? await room.localParticipant.unpublish(publication: publication) }
             }
+            #endif
         }
         .onChange(of: updater, { _, _ in })
         .task {

@@ -154,6 +154,7 @@
 		17F9D7632C9208B500D0BB6F /* MessageReactionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F9D7622C9208B500D0BB6F /* MessageReactionsSheet.swift */; };
 		19C23E09CE68C5BAF27C6250 /* BroadcastExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		36D461CF77D84B97B94929A9 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 03268FCCFC7D4D1F8B6E9F6F /* Sentry */; };
+		44395BFFFA27A8739B64882E /* MacScreenShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */; };
 		54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */; };
 		61C7F26C22DA29258396093D /* BroadcastHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007FE95D4B0296D7FA94D87D /* BroadcastHandler.swift */; };
 		6522088D4B027FDC879DB254 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 139FEB90F0B54A9966646840 /* LiveKit */; };
@@ -382,6 +383,7 @@
 		DAAA4C0829F2974300F41E52 /* Http.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Http.swift; sourceTree = "<group>"; };
 		DAAA4C0A29F2CF1200F41E52 /* Websocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Websocket.swift; sourceTree = "<group>"; };
 		DAAA4C0C29F2D16B00F41E52 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MacScreenShare.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -822,6 +824,7 @@
 				9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */,
 				D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */,
 				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
+				E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */,
 			);
 			path = Voice;
 			sourceTree = "<group>";
@@ -1295,6 +1298,7 @@
 				17D5C9442B14DF500060C035 /* DMScrollView.swift in Sources */,
 				1746A4B62CAF57C300095CF3 /* GroupDMChannelPermissionsSettings.swift in Sources */,
 				17D8BACF2B211DEE005F5447 /* ChannelInfo.swift in Sources */,
+				44395BFFFA27A8739B64882E /* MacScreenShare.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
