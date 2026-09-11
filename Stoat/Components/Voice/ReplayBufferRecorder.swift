@@ -358,7 +358,7 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
 /// overlay, so the result is pixel-accurate to the buffer regardless of
 /// how the on-screen tile happens to be scaled.
 enum AnnotationScreenshot {
-    static func composite(pixelBuffer: CVPixelBuffer, strokes: [AnnotationStroke], lasers: [String: AnnotationLaser]) -> UIImage? {
+    static func composite(pixelBuffer: CVPixelBuffer, strokes: [AnnotationStroke], lasers: [AnnotationLaser]) -> UIImage? {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         let ciContext = CIContext()
         guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return nil }
@@ -393,7 +393,7 @@ enum AnnotationScreenshot {
             // screen rather than showing a row of dots.
             let now = Date()
             let scale = Double(width) / 1000
-            for (_, laser) in lasers {
+            for laser in lasers {
                 let live = laser.points.filter { now.timeIntervalSince($0.t) < laserFadeSeconds }
                 let point = { (p: AnnotationPoint) in
                     CGPoint(x: p.x * Double(width), y: p.y * Double(height))

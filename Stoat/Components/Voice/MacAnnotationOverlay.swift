@@ -39,7 +39,8 @@ struct MacAnnotationOverlayView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { _ in
             Canvas { context, size in
-                for stroke in controller.strokes where stroke.points.count >= 2 {
+                // We are the one sharing, so only marks aimed at our screen.
+                for stroke in controller.visibleStrokes(for: controller.myId) where stroke.points.count >= 2 {
                     var path = Path()
                     for (i, p) in stroke.points.enumerated() {
                         let pt = CGPoint(x: p.x * size.width, y: p.y * size.height)
@@ -54,7 +55,7 @@ struct MacAnnotationOverlayView: View {
 
                 let now = Date()
                 let screen = CGRect(origin: .zero, size: size)
-                for (_, laser) in controller.lasers {
+                for laser in controller.visibleLasers(for: controller.myId) {
                     // Scaled up: this covers a whole display rather than a
                     // tile, so a trail sized for the tile would be a hairline.
                     drawLaserTrail(&context, laser: laser, now: now, rect: screen, scale: 1.6)

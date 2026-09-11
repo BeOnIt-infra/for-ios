@@ -303,7 +303,11 @@ struct VoiceChannelView: View {
                                         if track is LocalTrackPublication || track.isSubscribed {
                                             let videoTrack = track.track as! VideoTrack
                                             if track.source == .screenShareVideo {
-                                                ScreenShareTile(videoTrack: videoTrack, annotationController: annotationController)
+                                                ScreenShareTile(
+                                                    videoTrack: videoTrack,
+                                                    sharerIdentity: participant.identity?.stringValue,
+                                                    annotationController: annotationController
+                                                )
                                             } else {
                                                 SwiftUIVideoView(videoTrack, layoutMode: .fit)
                                                     .clipShape(RoundedRectangle(cornerRadius: 8))

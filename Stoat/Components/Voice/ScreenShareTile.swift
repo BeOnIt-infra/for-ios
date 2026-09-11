@@ -115,6 +115,8 @@ final class LatestFrameHolder: NSObject, VideoRenderer {
 
 struct ScreenShareTile: View {
     let videoTrack: VideoTrack
+    /// Identity of the participant whose screen this tile shows.
+    let sharerIdentity: String?
     @ObservedObject var annotationController: AnnotationController
 
     @State private var frameHolder = LatestFrameHolder()
@@ -129,6 +131,9 @@ struct ScreenShareTile: View {
                 controller: annotationController,
                 videoWidth: CGFloat(videoTrack.dimensions?.width ?? 0),
                 videoHeight: CGFloat(videoTrack.dimensions?.height ?? 0),
+                // Whose share this tile is showing: marks are scoped to it, so
+                // two people sharing at once no longer share one canvas.
+                target: sharerIdentity,
                 onCapture: handleCapture,
                 captureDisabled: isCapturing
             )
@@ -147,8 +152,8 @@ struct ScreenShareTile: View {
         #if canImport(UIKit)
         guard !isCapturing else { return }
         isCapturing = true
-        let strokes = annotationController.strokes
-        let lasers = annotationController.lasers
+        let strokes = annotationController.visibleStrokes(for: sharerIdentity)
+        let lasers = annotationController.visibleLasers(for: sharerIdentity)
         frameHolder.capture { pixelBuffer in
             guard let pixelBuffer else {
                 isCapturing = false

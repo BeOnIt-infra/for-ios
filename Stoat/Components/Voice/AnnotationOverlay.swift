@@ -33,6 +33,11 @@ struct AnnotationStroke: Identifiable {
     /// Identity of whoever drew this, taken from the verified sender of the
     /// packet rather than its payload, so nobody can annotate as someone else.
     let author: String
+    /// Identity of whoever's screen this was drawn on. Annotations used to be
+    /// room-scoped, so with two people sharing at once the same stroke landed
+    /// on both tiles. nil means it came from a client that predates this
+    /// field, and is shown everywhere as it used to be.
+    let target: String?
     let color: String
     var points: [AnnotationPoint]
     /// Set once stroke_end arrives; finished strokes accept no more points.
@@ -41,6 +46,8 @@ struct AnnotationStroke: Identifiable {
 
 struct AnnotationLaser {
     var color: String
+    /// See AnnotationStroke.target.
+    var target: String?
     var points: [AnnotationPoint]
 }
 
@@ -61,6 +68,8 @@ private let maxPointsPerStroke = 2000
 /// scoped per-track).
 final class AnnotationController: ObservableObject {
     @Published private(set) var strokes: [AnnotationStroke] = []
+    /// Keyed by sender, then by the share being drawn on ("" when unknown),
+    /// so one person pointing at two shares doesn't overwrite themselves.
     @Published private(set) var lasers: [String: AnnotationLaser] = [:]
 
     var myId: String = ""
@@ -121,7 +130,7 @@ final class AnnotationController: ObservableObject {
             let y = json["y"] as? Double ?? 0
             var next = strokes
             next.append(AnnotationStroke(
-                id: id, author: senderId, color: color,
+                id: id, author: senderId, target: json["target"] as? String, color: color,
                 points: [AnnotationPoint(x: x, y: y, t: Date())]
             ))
             strokes = next.count > maxStrokes ? Array(next.suffix(maxStrokes)) : next
@@ -150,28 +159,46 @@ final class AnnotationController: ObservableObject {
             let color = json["color"] as? String ?? annotationColors[0]
             let x = json["x"] as? Double ?? 0
             let y = json["y"] as? Double ?? 0
-            var laser = lasers[senderId] ?? AnnotationLaser(color: color, points: [])
+            let target = json["target"] as? String
+            let key = "\(senderId)|\(target ?? "")"
+            var laser = lasers[key] ?? AnnotationLaser(color: color, target: target, points: [])
             laser.color = color
+            laser.target = target
             laser.points = laser.points.filter { Date().timeIntervalSince($0.t) < laserFadeSeconds }
             laser.points.append(AnnotationPoint(x: x, y: y, t: Date()))
-            lasers[senderId] = laser
+            lasers[key] = laser
 
         // Scoped to the sender's own strokes: everyone in the call may
         // publish on this topic, so a global wipe would let anyone erase
         // other people's annotations.
         case "clear":
-            strokes = strokes.filter { $0.author != senderId }
+            // Scoped to this share as well as to the sender, so clearing one
+            // person's screen doesn't wipe what's drawn on another's.
+            let target = json["target"] as? String
+            strokes = strokes.filter { $0.author != senderId || ($0.target != target && target != nil) }
 
         default: break
         }
+    }
+
+    /// Marks to draw on one share. A nil `target` on a mark means it came
+    /// from a client that predates per-share scoping, so it is shown on every
+    /// share rather than disappearing.
+    func visibleStrokes(for target: String?) -> [AnnotationStroke] {
+        strokes.filter { $0.target == nil || $0.target == target }
+    }
+
+    func visibleLasers(for target: String?) -> [AnnotationLaser] {
+        lasers.values.filter { $0.target == nil || $0.target == target }
     }
 
     private func send(_ payload: [String: Any], reliable: Bool) {
         onSend?(payload, reliable)
     }
 
-    func localStrokeStart(id: String, color: String, x: Double, y: Double) {
-        let event: [String: Any] = ["type": "stroke_start", "id": id, "color": color, "x": x, "y": y]
+    func localStrokeStart(id: String, color: String, x: Double, y: Double, target: String?) {
+        var event: [String: Any] = ["type": "stroke_start", "id": id, "color": color, "x": x, "y": y]
+        if let target { event["target"] = target }
         applyEvent(event, senderId: myId)
         send(event, reliable: true)
     }
@@ -188,14 +215,16 @@ final class AnnotationController: ObservableObject {
         send(event, reliable: true)
     }
 
-    func localLaser(color: String, x: Double, y: Double) {
-        let event: [String: Any] = ["type": "laser", "participantId": myId, "color": color, "x": x, "y": y]
+    func localLaser(color: String, x: Double, y: Double, target: String?) {
+        var event: [String: Any] = ["type": "laser", "participantId": myId, "color": color, "x": x, "y": y]
+        if let target { event["target"] = target }
         applyEvent(event, senderId: myId)
         send(event, reliable: false)
     }
 
-    func localClear() {
-        let event: [String: Any] = ["type": "clear"]
+    func localClear(target: String?) {
+        var event: [String: Any] = ["type": "clear"]
+        if let target { event["target"] = target }
         applyEvent(event, senderId: myId)
         send(event, reliable: true)
     }
@@ -274,6 +303,9 @@ struct ScreenShareAnnotationOverlay: View {
     @ObservedObject var controller: AnnotationController
     var videoWidth: CGFloat
     var videoHeight: CGFloat
+    /// Identity of whoever is sharing the screen this overlay sits on, so
+    /// marks meant for someone else's share aren't drawn here.
+    var target: String?
     /// Fires when the capture (screenshot) toolbar button is tapped.
     var onCapture: (() -> Void)?
     /// Greys the capture button out while a save is in flight. Kept separate
@@ -296,7 +328,7 @@ struct ScreenShareAnnotationOverlay: View {
             ZStack(alignment: .top) {
                 TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { _ in
                     Canvas { context, _ in
-                        for stroke in controller.strokes where stroke.points.count >= 2 {
+                        for stroke in controller.visibleStrokes(for: target) where stroke.points.count >= 2 {
                             var path = Path()
                             for (i, p) in stroke.points.enumerated() {
                                 let pt = CGPoint(x: rect.minX + p.x * rect.width, y: rect.minY + p.y * rect.height)
@@ -310,7 +342,7 @@ struct ScreenShareAnnotationOverlay: View {
                         }
 
                         let now = Date()
-                        for (_, laser) in controller.lasers {
+                        for laser in controller.visibleLasers(for: target) {
                             drawLaserTrail(&context, laser: laser, now: now, rect: rect)
                         }
                     }
@@ -342,11 +374,11 @@ struct ScreenShareAnnotationOverlay: View {
                         let id = "\(controller.myId)-\(Date().timeIntervalSince1970)-\(Int.random(in: 0 ... 9999))"
                         localStrokeId = id
                         lastPoint = (nx, ny)
-                        controller.localStrokeStart(id: id, color: colorHex, x: nx, y: ny)
+                        controller.localStrokeStart(id: id, color: colorHex, x: nx, y: ny, target: target)
                     }
                 } else if tool == .laser {
                     if movedEnough(nx, ny) {
-                        controller.localLaser(color: colorHex, x: nx, y: ny)
+                        controller.localLaser(color: colorHex, x: nx, y: ny, target: target)
                         lastPoint = (nx, ny)
                     }
                 }
@@ -386,7 +418,7 @@ struct ScreenShareAnnotationOverlay: View {
                     }
             }
             toolButton(systemName: "trash", selected: false) {
-                controller.localClear()
+                controller.localClear(target: target)
             }
             if let onCapture {
                 toolButton(systemName: "camera", selected: false, action: onCapture)
