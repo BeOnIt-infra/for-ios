@@ -97,8 +97,6 @@ struct VoiceChannelView: View {
     /// Held for the life of the view: the capturer owns the SCStream and the
     /// published track, so losing it mid-share would strand both.
     @State private var macScreenShare = MacScreenShareHolder()
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
 
     private func toggleMacScreenShare() {
         guard #available(macCatalyst 18.2, *) else {
@@ -113,18 +111,17 @@ struct VoiceChannelView: View {
                 await capturer.stopAndUnpublish(from: room)
                 screenSharing = false
                 replayRecorder.stop()
-                MacOverlayBridge.shared.controller = nil
-                dismissWindow(id: macAnnotationOverlayWindowID)
             }
         } else {
             Task {
                 do {
                     try await capturer.start(in: room)
                     screenSharing = true
-                    // Float the strokes over the whole screen for as long as
-                    // we're the one being shared.
-                    MacOverlayBridge.shared.controller = annotationController
-                    openWindow(id: macAnnotationOverlayWindowID)
+                    // The on-screen overlay is not opened yet: its window
+                    // still comes up opaque with a title bar instead of a
+                    // transparent click-through layer, which covers the
+                    // screen being shared. Strokes are visible on the tile
+                    // in the app meanwhile. See MacAnnotationOverlay.swift.
                 } catch {
                     // Denying Screen Recording surfaces here as a
                     // ScreenCaptureKit error rather than a permission
@@ -200,8 +197,6 @@ struct VoiceChannelView: View {
                     // gone -- with the system recording indicator still lit.
                     await macScreenShare.capturer.stopAndUnpublish(from: room)
                 }
-                MacOverlayBridge.shared.controller = nil
-                dismissWindow(id: macAnnotationOverlayWindowID)
                 #else
                 BroadcastManager.shared.requestStop()
                 #endif

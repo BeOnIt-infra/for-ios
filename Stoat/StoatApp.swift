@@ -80,19 +80,6 @@ struct StoatApp: App {
                 }
         }
 
-        // A second window, opened only while sharing this Mac's screen, that
-        // floats the annotation strokes over every other app -- so whoever is
-        // being drawn on sees the marks where they actually are, not just
-        // inside the chat window. See MacAnnotationOverlay.swift.
-        // SwiftUI's single-instance `Window` scene is unavailable on Catalyst,
-        // so this is a WindowGroup that gets hidden at the AppKit level
-        // instead -- see MacAnnotationOverlayWindow.style().
-        #if targetEnvironment(macCatalyst)
-        WindowGroup(id: macAnnotationOverlayWindowID) {
-            MacAnnotationOverlayHost()
-        }
-        .windowResizability(.contentSize)
-        #endif
     }
 }
 

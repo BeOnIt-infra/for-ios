@@ -126,6 +126,7 @@ private struct SceneNamer: UIViewRepresentable {
                 current.isOpaque = false
                 view = current.superview
             }
+            MacAnnotationOverlayWindow.diag("didMoveToWindow: scene titled, starting styling")
             MacAnnotationOverlayWindow.styleWhenReady()
         }
     }
@@ -147,9 +148,27 @@ enum MacAnnotationOverlayWindow {
         }
     }
 
+    /// Temporary: records what the styling pass actually sees.
+    static func diag(_ text: String) {
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("overlay-diag.txt")
+        let line = "\(Date()): \(text)\n"
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            try? handle.close()
+        } else {
+            try? line.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+
     @discardableResult
     static func style() -> Bool {
-        guard let window = overlayWindow() else { return false }
+        guard let window = overlayWindow() else {
+            diag("no match. titles=\(allWindowTitles())")
+            return false
+        }
+        diag("matched window, applying")
 
         // Borderless: the scene opens as an ordinary titled window, and a
         // title bar on a full-screen overlay is both visible and draggable.
@@ -184,7 +203,19 @@ enum MacAnnotationOverlayWindow {
         }
 
         window.perform(NSSelectorFromString("orderFrontRegardless"))
+        diag("applied. styleMask=\(String(describing: window.value(forKey: "styleMask"))) level=\(String(describing: window.value(forKey: "level"))) opaque=\(String(describing: window.value(forKey: "opaque")))")
         return true
+    }
+
+    static func allWindowTitles() -> String {
+        guard let appClass = NSClassFromString("NSApplication") as AnyObject?,
+              let app = appClass.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue() as AnyObject?,
+              let windows = app.perform(NSSelectorFromString("windows"))?.takeUnretainedValue() as? [AnyObject]
+        else { return "<no NSApplication>" }
+        return windows.map { w in
+            let t = (w.value(forKey: "title") as? String) ?? "<nil>"
+            return "[\(type(of: w)) '\(t)']"
+        }.joined(separator: ", ")
     }
 
     /// The overlay scene's NSWindow, identified by the title SwiftUI gave it.
