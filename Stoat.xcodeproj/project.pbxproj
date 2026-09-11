@@ -143,9 +143,6 @@
 		17E019DC2AF1B25100AB4663 /* SessionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E019DB2AF1B25100AB4663 /* SessionsSettings.swift */; };
 		17E28E082AF319D500F6069F /* AddServerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E28E072AF319D500F6069F /* AddServerSheet.swift */; };
 		17E346772CBC53A3000FBE6C /* AlertPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E346762CBC53A3000FBE6C /* AlertPopup.swift */; };
-		54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */; };
-		FD4721537FBB8DF8E2714B32 /* ReplayBufferRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */; };
-		BC3C589BEBA9335BEF78A659 /* ScreenShareTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */; };
 		17E5AA172CD8686D00C1EA19 /* ChannelPins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E5AA162CD8686800C1EA19 /* ChannelPins.swift */; };
 		17E72F832CACEAB8009E7C40 /* SwiftyCrop in Frameworks */ = {isa = PBXBuildFile; productRef = 17E72F822CACEAB8009E7C40 /* SwiftyCrop */; };
 		17F502542B9BFB1000A3022D /* AddFriend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F502532B9BFB1000A3022D /* AddFriend.swift */; };
@@ -155,7 +152,13 @@
 		17F8FBC62D8CA40E006EAD0A /* AnyCodable in Frameworks */ = {isa = PBXBuildFile; productRef = 177DA1162CEADBB1000FC7EA /* AnyCodable */; };
 		17F8FBCA2D8CC019006EAD0A /* Zoomable in Frameworks */ = {isa = PBXBuildFile; productRef = 17F8FBC92D8CC019006EAD0A /* Zoomable */; };
 		17F9D7632C9208B500D0BB6F /* MessageReactionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F9D7622C9208B500D0BB6F /* MessageReactionsSheet.swift */; };
+		19C23E09CE68C5BAF27C6250 /* BroadcastExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		36D461CF77D84B97B94929A9 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 03268FCCFC7D4D1F8B6E9F6F /* Sentry */; };
+		54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */; };
+		61C7F26C22DA29258396093D /* BroadcastHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007FE95D4B0296D7FA94D87D /* BroadcastHandler.swift */; };
+		6522088D4B027FDC879DB254 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 139FEB90F0B54A9966646840 /* LiveKit */; };
+		96CAA073B2CA58F1A86FD29E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68889A92D9022DB4D1140586 /* Foundation.framework */; };
+		BC3C589BEBA9335BEF78A659 /* ScreenShareTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */; };
 		D49B705329C4D3FE009494A5 /* StoatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49B705229C4D3FE009494A5 /* StoatApp.swift */; };
 		D49B705729C4D3FE009494A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D49B705629C4D3FE009494A5 /* Assets.xcassets */; };
 		D49B705A29C4D3FE009494A5 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D49B705929C4D3FE009494A5 /* Preview Assets.xcassets */; };
@@ -169,6 +172,7 @@
 		DAAA4C0929F2974300F41E52 /* Http.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAA4C0829F2974300F41E52 /* Http.swift */; };
 		DAAA4C0B29F2CF1200F41E52 /* Websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAA4C0A29F2CF1200F41E52 /* Websocket.swift */; };
 		DAF84FFD2A0EFE1B00B01682 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = DAF84FFC2A0EFE1B00B01682 /* Starscream */; };
+		FD4721537FBB8DF8E2714B32 /* ReplayBufferRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -193,6 +197,13 @@
 			remoteGlobalIDString = 17DE7DB12BFAEC3F00C99188;
 			remoteInfo = Types;
 		};
+		AF81D5C040293E38D7BB2FA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D49B704729C4D3FE009494A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B9D5FC0C01F45DA4A3FC5914;
+			remoteInfo = BroadcastExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -203,9 +214,10 @@
 			dstSubfolderSpec = 13;
 			files = (
 				175465D12C42147B0076B393 /* NotificationService.appex in Embed Foundation Extensions */,
+				19C23E09CE68C5BAF27C6250 /* BroadcastExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		1773C02B2C07DC32007B8867 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -221,6 +233,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		007FE95D4B0296D7FA94D87D /* BroadcastHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BroadcastHandler.swift; sourceTree = "<group>"; };
+		0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenShareTile.swift; sourceTree = "<group>"; };
 		1701E08B2C4C395900DD970F /* emoji_15_1_ordering.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = emoji_15_1_ordering.json; sourceTree = "<group>"; };
 		170410962CA478D5002C1445 /* AllPermissionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPermissionsSettings.swift; sourceTree = "<group>"; };
 		170410982CA478F6002C1445 /* DefaultRoleSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultRoleSettings.swift; sourceTree = "<group>"; };
@@ -347,15 +361,16 @@
 		17E019DB2AF1B25100AB4663 /* SessionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsSettings.swift; sourceTree = "<group>"; };
 		17E28E072AF319D500F6069F /* AddServerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddServerSheet.swift; sourceTree = "<group>"; };
 		17E346762CBC53A3000FBE6C /* AlertPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPopup.swift; sourceTree = "<group>"; };
-		9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlay.swift; sourceTree = "<group>"; };
-		D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayBufferRecorder.swift; sourceTree = "<group>"; };
-		0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenShareTile.swift; sourceTree = "<group>"; };
 		17E5AA162CD8686800C1EA19 /* ChannelPins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelPins.swift; sourceTree = "<group>"; };
 		17F502532B9BFB1000A3022D /* AddFriend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriend.swift; sourceTree = "<group>"; };
 		17F502552B9BFB2800A3022D /* CreateGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGroup.swift; sourceTree = "<group>"; };
 		17F555262AFC229900958F2F /* ServerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerSettings.swift; sourceTree = "<group>"; };
 		17F8B7082C7983730065F1DE /* CreateServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateServer.swift; sourceTree = "<group>"; };
 		17F9D7622C9208B500D0BB6F /* MessageReactionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageReactionsSheet.swift; sourceTree = "<group>"; };
+		68889A92D9022DB4D1140586 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlay.swift; sourceTree = "<group>"; };
+		D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayBufferRecorder.swift; sourceTree = "<group>"; };
 		D49B704F29C4D3FE009494A5 /* Stoat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stoat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D49B705229C4D3FE009494A5 /* StoatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoatApp.swift; sourceTree = "<group>"; };
 		D49B705629C4D3FE009494A5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -370,8 +385,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		176E2BF42D47F20E00B2CDDF /* BroadcastExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BroadcastExtension; sourceTree = "<group>"; };
-		17945C802DFDB14C00BCD397 /* ChannelWebhooks */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ChannelWebhooks; sourceTree = "<group>"; };
+		17945C802DFDB14C00BCD397 /* ChannelWebhooks */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ChannelWebhooks;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -380,6 +404,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				17B375812C41FEC300FC7E6E /* Types.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B251144387967787A6C2B3A1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96CAA073B2CA58F1A86FD29E /* Foundation.framework in Frameworks */,
+				6522088D4B027FDC879DB254 /* LiveKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -631,16 +664,6 @@
 			path = CommonElements;
 			sourceTree = "<group>";
 		};
-		6C4EC6C035035D4D2E75969B /* Voice */ = {
-			isa = PBXGroup;
-			children = (
-				9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */,
-				D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */,
-				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
-			);
-			path = Voice;
-			sourceTree = "<group>";
-		};
 		17BB78B62CA4C636000CAD87 /* ChannelPermissionsSettings */ = {
 			isa = PBXGroup;
 			children = (
@@ -776,6 +799,33 @@
 			path = MessageRenderer;
 			sourceTree = "<group>";
 		};
+		2C754FD21EDECC0BBAC128DB /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				68889A92D9022DB4D1140586 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		42E60CFF4AA7E2220665F994 /* BroadcastExtension */ = {
+			isa = PBXGroup;
+			children = (
+				007FE95D4B0296D7FA94D87D /* BroadcastHandler.swift */,
+			);
+			name = BroadcastExtension;
+			path = BroadcastExtension;
+			sourceTree = "<group>";
+		};
+		6C4EC6C035035D4D2E75969B /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */,
+				D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */,
+				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
+			);
+			path = Voice;
+			sourceTree = "<group>";
+		};
 		D49B704629C4D3FE009494A5 = {
 			isa = PBXGroup;
 			children = (
@@ -783,10 +833,10 @@
 				D49B705129C4D3FE009494A5 /* Stoat */,
 				17DE7DB32BFAEC3F00C99188 /* Types */,
 				175465CB2C42147B0076B393 /* NotificationService */,
-				176E2BF42D47F20E00B2CDDF /* BroadcastExtension */,
 				D49B705029C4D3FE009494A5 /* Products */,
 				DAFC10FE29CFC3B400D2C2F9 /* Frameworks */,
 				17C45D4B2C6167D300CD8ED4 /* OptimizationProfiles */,
+				42E60CFF4AA7E2220665F994 /* BroadcastExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -796,6 +846,7 @@
 				D49B704F29C4D3FE009494A5 /* Stoat.app */,
 				17DE7DB22BFAEC3F00C99188 /* Types.framework */,
 				175465CA2C42147B0076B393 /* NotificationService.appex */,
+				691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -832,6 +883,7 @@
 				17D126152D46ED8E0049F9A0 /* WidgetKit.framework */,
 				17D126172D46ED8E0049F9A0 /* SwiftUI.framework */,
 				176E2BF22D47F20E00B2CDDF /* ReplayKit.framework */,
+				2C754FD21EDECC0BBAC128DB /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -885,6 +937,26 @@
 			productReference = 17DE7DB22BFAEC3F00C99188 /* Types.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		B9D5FC0C01F45DA4A3FC5914 /* BroadcastExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BC21D46A0F3AEDB9CB82E86 /* Build configuration list for PBXNativeTarget "BroadcastExtension" */;
+			buildPhases = (
+				CB95EA254EE8A29CD072411C /* Sources */,
+				B251144387967787A6C2B3A1 /* Frameworks */,
+				26158BF90810D7979A6DB848 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BroadcastExtension;
+			packageProductDependencies = (
+				139FEB90F0B54A9966646840 /* LiveKit */,
+			);
+			productName = BroadcastExtension;
+			productReference = 691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		D49B704E29C4D3FE009494A5 /* Stoat */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D49B707329C4D3FE009494A5 /* Build configuration list for PBXNativeTarget "Stoat" */;
@@ -903,6 +975,7 @@
 				17F3EFAF2B13D042002C34B5 /* PBXTargetDependency */,
 				1773C02A2C07DC32007B8867 /* PBXTargetDependency */,
 				175465D02C42147B0076B393 /* PBXTargetDependency */,
+				53CEB830D8D8E18768BF7F69 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				17945C802DFDB14C00BCD397 /* ChannelWebhooks */,
@@ -993,7 +1066,7 @@
 				177DA1152CEADBB1000FC7EA /* XCRemoteSwiftPackageReference "AnyCodable" */,
 				17F8FBC82D8CC019006EAD0A /* XCRemoteSwiftPackageReference "Zoomable" */,
 				174A475E2DA955590049F1C5 /* XCRemoteSwiftPackageReference "SwipeActions" */,
-				17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID" */,
+				17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID.swift" */,
 				177A6B2B2D472D7E0052B031 /* XCRemoteSwiftPackageReference "components-swift" */,
 			);
 			productRefGroup = D49B705029C4D3FE009494A5 /* Products */;
@@ -1003,6 +1076,7 @@
 				D49B704E29C4D3FE009494A5 /* Stoat */,
 				17DE7DB12BFAEC3F00C99188 /* Types */,
 				175465C92C42147B0076B393 /* NotificationService */,
+				B9D5FC0C01F45DA4A3FC5914 /* BroadcastExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -1016,6 +1090,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		17DE7DB02BFAEC3F00C99188 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26158BF90810D7979A6DB848 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1086,6 +1167,14 @@
 				1773C0392C07DC99007B8867 /* User.swift in Sources */,
 				1773C03A2C07DC99007B8867 /* Types.h in Sources */,
 				1773C03B2C07DC99007B8867 /* File.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CB95EA254EE8A29CD072411C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61C7F26C22DA29258396093D /* BroadcastHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1248,6 +1337,14 @@
 			);
 			productRef = 17F3EFAE2B13D042002C34B5 /* HCaptcha_RxSwift */;
 		};
+		53CEB830D8D8E18768BF7F69 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilters = (
+				ios,
+			);
+			target = B9D5FC0C01F45DA4A3FC5914 /* BroadcastExtension */;
+			targetProxy = AF81D5C040293E38D7BB2FA9 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1260,7 +1357,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SV9Y7P7XP4;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
@@ -1277,7 +1374,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = chat.stoat.app.notifications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1301,7 +1398,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SV9Y7P7XP4;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
@@ -1318,7 +1415,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = chat.stoat.app.notifications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1437,6 +1534,67 @@
 				TARGETED_DEVICE_FAMILY = "1,2,3,4,6,7";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		5E58AD5F65639F5B30B7F232 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CODE_SIGN_ENTITLEMENTS = BroadcastExtension/BroadcastExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 0.0.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BroadcastExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BroadcastExtension;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = chat.stoat.app.BroadcastExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		62338E8A999B4C1E043398C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CODE_SIGN_ENTITLEMENTS = BroadcastExtension/BroadcastExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 0.0.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BroadcastExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BroadcastExtension;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = chat.stoat.app.BroadcastExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -1708,6 +1866,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		3BC21D46A0F3AEDB9CB82E86 /* Build configuration list for PBXNativeTarget "BroadcastExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				62338E8A999B4C1E043398C4 /* Release */,
+				5E58AD5F65639F5B30B7F232 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		D49B704A29C4D3FE009494A5 /* Build configuration list for PBXProject "Stoat" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1841,7 +2008,7 @@
 				minimumVersion = 5.7.1;
 			};
 		};
-		17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID" */ = {
+		17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/yaslab/ULID.swift";
 			requirement = {
@@ -1913,6 +2080,11 @@
 			package = 6DCF7E838FEB4C359405B802 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
 		};
+		139FEB90F0B54A9966646840 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1757A26B2BB7444D007EE8B9 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
+		};
 		172754CB2B39989E002223FE /* SwiftParsec */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 172754CA2B39989E002223FE /* XCRemoteSwiftPackageReference "SwiftParsec" */;
@@ -1950,7 +2122,7 @@
 		};
 		177A6B202D46F3F40052B031 /* ULID */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID" */;
+			package = 17D1264A2D46EFDC0049F9A0 /* XCRemoteSwiftPackageReference "ULID.swift" */;
 			productName = ULID;
 		};
 		177A6B222D46F4340052B031 /* LiveKit */ = {
