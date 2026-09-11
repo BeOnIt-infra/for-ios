@@ -145,9 +145,26 @@ struct VoiceChannelView: View {
 
     @MainActor
     func connect() async {
-        let node = viewState.apiInfo!.features.livekit.nodes.first!
+        // Every step here used to be forced. Joining a call that the server
+        // refuses, or a LiveKit node that can't be reached, killed the app
+        // outright -- a crash report from exactly that is what prompted
+        // this. Failing back to "not in a call" with a message is the only
+        // reasonable outcome.
+        guard let node = viewState.apiInfo?.features.livekit.nodes.first else {
+            callAlertMessage = "This server has no voice nodes configured."
+            inCall = false
+            return
+        }
 
-        let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
+        let token: VoiceChannelToken
+        do {
+            token = try await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
+        } catch {
+            callAlertMessage = "Couldn't join the call: \(error.localizedDescription)"
+            inCall = false
+            return
+        }
+
         let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController, replayRecorder: replayRecorder)
         // Room keeps delegates in an NSHashTable of weak references, so a
         // delegate that only lives in a local is deallocated the moment
@@ -157,7 +174,14 @@ struct VoiceChannelView: View {
         roomDelegate = dele
         let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: false))
 
-        try! await room.connect(url: node.public_url, token: token.token)
+        do {
+            try await room.connect(url: node.public_url, token: token.token)
+        } catch {
+            callAlertMessage = "Couldn't reach the voice server: \(error.localizedDescription)"
+            roomDelegate = nil
+            inCall = false
+            return
+        }
 
         viewState.currentVoiceChannel = channel.id
         viewState.currentVoice = room
@@ -291,7 +315,7 @@ struct VoiceChannelView: View {
                                                 
                                                 Button {
                                                     Task {
-                                                        try! await remoteTrack.set(subscribed: true)
+                                                        try? await remoteTrack.set(subscribed: true)
                                                     }
                                                 } label: {
                                                     Text("Watch")
@@ -304,7 +328,7 @@ struct VoiceChannelView: View {
                                         if let remoteTrack = track as? RemoteTrackPublication, remoteTrack.isSubscribed {
                                             Button {
                                                 Task {
-                                                    try! await remoteTrack.set(subscribed: false)
+                                                    try? await remoteTrack.set(subscribed: false)
                                                 }
                                             } label: {
                                                 Text("Disconnect")
@@ -470,9 +494,9 @@ struct VoiceChannelView: View {
             if let room = viewState.currentVoice {
                 Task {
                     if unmuted {
-                        try! await room.localParticipant.setMicrophone(enabled: true)
+                        try? await room.localParticipant.setMicrophone(enabled: true)
                     } else if let micTrack = room.localParticipant.localAudioTracks.first {
-                        try! await room.localParticipant.unpublish(publication: micTrack)
+                        try? await room.localParticipant.unpublish(publication: micTrack)
                     }
                 }
             }
@@ -597,7 +621,7 @@ class VoiceChannelDelegate: RoomDelegate {
         print(publication.track)
         
         if publication.kind == .audio {
-            Task { try! await publication.set(subscribed: true) }
+            Task { try? await publication.set(subscribed: true) }
         }
         
         self.updater.toggle()
