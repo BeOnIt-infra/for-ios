@@ -20,6 +20,10 @@ enum LoginState {
     case Disabled
     case Invalid
     case Onboarding
+    /// The request never produced an answer -- server unreachable, wrong
+    /// API URL, TLS failure, an unparseable body. Distinct from .Invalid,
+    /// which means the server actively rejected the credentials.
+    case Failed(reason: String)
 }
 
 struct LoginSuccess: Decodable {
@@ -443,10 +447,17 @@ public class ViewState: ObservableObject {
 
                 switch response.result {
                     case .success(let data):
-                        if [401, 500].contains(response.response!.statusCode) {
+                        guard let statusCode = response.response?.statusCode else {
+                            return callback(.Failed(reason: "No response from \(self.http.baseURL)"))
+                        }
+                        if [401, 500].contains(statusCode) {
                             return callback(.Invalid)
                         }
-                        let result = try! JSONDecoder().decode(LoginResponse.self, from: data)
+                        guard let result = try? JSONDecoder().decode(LoginResponse.self, from: data) else {
+                            // Pointing the app at something that isn't a Stoat
+                            // API lands here: a 200 whose body doesn't decode.
+                            return callback(.Failed(reason: "Unexpected response (HTTP \(statusCode)) from \(self.http.baseURL)"))
+                        }
                         switch result {
                             case .Success(let success):
                                 Task { @MainActor in
@@ -479,8 +490,11 @@ public class ViewState: ObservableObject {
                             case .Disabled:
                                 return callback(.Disabled)
                         }
-                    case .failure(_):
-                        ()
+                    // Swallowing this left the login screen looking like the
+                    // button did nothing at all -- no spinner, no error, no
+                    // way to tell an unreachable server from a typo.
+                    case .failure(let error):
+                        callback(.Failed(reason: error.localizedDescription))
                 }
             }
     }

@@ -39,7 +39,10 @@ struct LogIn: View {
                 
                 case .Invalid:
                     self.errorMessage = "Invalid email and/or password"
-                
+
+                case .Failed(let reason):
+                    self.errorMessage = reason
+
                 case .Onboarding:
                     viewState.isOnboarding = true
                     self.needsOnboarding = true
@@ -207,6 +210,8 @@ struct Mfa: View {
                         error = "Account disabled"
                     case .Invalid:
                         error = "Invalid \(selected!.replacing("_", with: " "))"
+                    case .Failed(let reason):
+                        error = reason
                     case .Onboarding:
                         ()
                     case .Mfa(let ticket, let methods):
