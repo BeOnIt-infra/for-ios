@@ -117,15 +117,14 @@ private struct SceneNamer: UIViewRepresentable {
             scene.titlebar?.titleVisibility = .hidden
             scene.titlebar?.toolbar = nil
             clearBackgrounds()
-            MacAnnotationOverlayWindow.diag("didMoveToWindow: scene titled, starting styling")
             MacAnnotationOverlayWindow.styleWhenReady()
         }
 
-        // The NSWindow is already transparent (diagnostics confirmed
-        // opaque=0), so any remaining black is UIKit painting over it: the
-        // UIWindow, the hosting controller's view, and SwiftUI's own layers
-        // each carry a background. They are re-set as SwiftUI lays out, so
-        // clearing once in didMoveToWindow isn't enough.
+        // The NSWindow ends up transparent on its own, so any remaining
+        // black is UIKit painting over it: the UIWindow, the hosting
+        // controller's view, and SwiftUI's own layers each carry a
+        // background, and they are re-set as SwiftUI lays out -- clearing
+        // once in didMoveToWindow isn't enough.
         override func layoutSubviews() {
             super.layoutSubviews()
             clearBackgrounds()
@@ -138,6 +137,8 @@ private struct SceneNamer: UIViewRepresentable {
             while let current = view {
                 current.backgroundColor = .clear
                 current.isOpaque = false
+                current.layer.backgroundColor = nil
+                current.layer.isOpaque = false
                 view = current.superview
             }
         }
@@ -160,29 +161,29 @@ enum MacAnnotationOverlayWindow {
         }
     }
 
-    /// Temporary: records what the styling pass actually sees. Writes to a
-    /// fixed path rather than a container-relative one, since this build
-    /// isn't sandboxed and the container path guess was wrong once already.
-    static func diag(_ text: String) {
-        let url = URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("beonit-overlay-diag.txt")
-        let line = "\(Date()): \(text)\n"
-        if let handle = try? FileHandle(forWritingTo: url) {
-            handle.seekToEndOfFile()
-            handle.write(line.data(using: .utf8)!)
-            try? handle.close()
-        } else {
-            try? line.write(to: url, atomically: true, encoding: .utf8)
+    @discardableResult
+    static func style() -> Bool {
+        // Every match, not just the first: SwiftUI restores a WindowGroup's
+        // windows across launches, so opening one can leave two around. The
+        // unstyled one is a plain opaque window sitting over the screen --
+        // which is exactly the black rectangle this kept producing.
+        let windows = overlayWindows()
+        guard !windows.isEmpty else { return false }
+        for window in windows { apply(to: window) }
+        return true
+    }
+
+    /// Closes every overlay window. SwiftUI restores a WindowGroup's windows
+    /// on launch, so they accumulate: one per previous run, each an opaque
+    /// sheet over the screen until something styles it. Called at startup to
+    /// clear whatever was restored before any of them can be seen.
+    static func closeAll() {
+        for window in overlayWindows() {
+            window.perform(NSSelectorFromString("close"))
         }
     }
 
-    @discardableResult
-    static func style() -> Bool {
-        guard let window = overlayWindow() else {
-            diag("no match. titles=\(allWindowTitles())")
-            return false
-        }
-        diag("matched window, applying")
+    private static func apply(to window: AnyObject) {
 
         // Borderless: the scene opens as an ordinary titled window, and a
         // title bar on a full-screen overlay is both visible and draggable.
@@ -217,29 +218,17 @@ enum MacAnnotationOverlayWindow {
         }
 
         window.perform(NSSelectorFromString("orderFrontRegardless"))
-        diag("applied. styleMask=\(String(describing: window.value(forKey: "styleMask"))) level=\(String(describing: window.value(forKey: "level"))) opaque=\(String(describing: window.value(forKey: "opaque")))")
-        return true
     }
 
-    static func allWindowTitles() -> String {
+    /// Every NSWindow belonging to an overlay scene, identified by the title
+    /// SwiftUI gave it.
+    private static func overlayWindows() -> [AnyObject] {
         guard let appClass = NSClassFromString("NSApplication") as AnyObject?,
               let app = appClass.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue() as AnyObject?,
               let windows = app.perform(NSSelectorFromString("windows"))?.takeUnretainedValue() as? [AnyObject]
-        else { return "<no NSApplication>" }
-        return windows.map { w in
-            let t = (w.value(forKey: "title") as? String) ?? "<nil>"
-            return "[\(type(of: w)) '\(t)']"
-        }.joined(separator: ", ")
-    }
+        else { return [] }
 
-    /// The overlay scene's NSWindow, identified by the title SwiftUI gave it.
-    private static func overlayWindow() -> AnyObject? {
-        guard let appClass = NSClassFromString("NSApplication") as AnyObject?,
-              let app = appClass.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue() as AnyObject?,
-              let windows = app.perform(NSSelectorFromString("windows"))?.takeUnretainedValue() as? [AnyObject]
-        else { return nil }
-
-        return windows.first { window in
+        return windows.filter { window in
             (window.value(forKey: "title") as? String) == macAnnotationOverlayWindowID
         }
     }

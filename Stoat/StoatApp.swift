@@ -36,6 +36,17 @@ struct StoatApp: App {
                 .background(state.theme.background.color)
                 .foregroundStyle(state.theme.foreground.color)
                 .typesettingLanguage((state.currentLocale ?? systemLocale).language)
+                .task {
+                    #if targetEnvironment(macCatalyst)
+                    // Sweep up annotation overlay windows SwiftUI restored
+                    // from previous runs; they pile up one per launch and
+                    // each is an opaque sheet over the screen.
+                    for _ in 0 ..< 10 {
+                        MacAnnotationOverlayWindow.closeAll()
+                        try? await Task.sleep(for: .milliseconds(300))
+                    }
+                    #endif
+                }
                 .onOpenURL { url in
                     print(url)
                     let components = NSURLComponents(string: url.absoluteString)
