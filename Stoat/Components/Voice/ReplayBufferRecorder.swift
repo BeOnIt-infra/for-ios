@@ -388,18 +388,46 @@ enum AnnotationScreenshot {
                 cg.strokePath()
             }
 
+            // Same tapering streak the live overlays draw, rebuilt against
+            // Core Graphics so a captured screenshot matches what was on
+            // screen rather than showing a row of dots.
             let now = Date()
+            let scale = Double(width) / 1000
             for (_, laser) in lasers {
-                for p in laser.points {
-                    let age = now.timeIntervalSince(p.t)
-                    guard age < laserFadeSeconds else { continue }
-                    let alpha = max(0, min(1, 1 - age / laserFadeSeconds))
-                    let radius = (5 * alpha + 3) * (Double(width) / 1000)
-                    let pt = CGPoint(x: p.x * Double(width), y: p.y * Double(height))
-                    cg.setFillColor(themeCGColor(hex: laser.color, alpha: alpha))
-                    cg.fillEllipse(in: CGRect(x: pt.x - radius, y: pt.y - radius, width: radius * 2, height: radius * 2))
+                let live = laser.points.filter { now.timeIntervalSince($0.t) < laserFadeSeconds }
+                let point = { (p: AnnotationPoint) in
+                    CGPoint(x: p.x * Double(width), y: p.y * Double(height))
+                }
+
+                if live.count >= 2 {
+                    for i in 1 ..< live.count {
+                        let life = max(0, min(1, 1 - now.timeIntervalSince(live[i].t) / laserFadeSeconds))
+                        guard life > 0 else { continue }
+                        for (widthScale, alphaScale) in [(10 * life + 3, 0.25), (3 * life + 1.5, 1.0)] {
+                            cg.setStrokeColor(themeCGColor(hex: laser.color, alpha: life * alphaScale))
+                            cg.setLineWidth(widthScale * scale)
+                            cg.beginPath()
+                            cg.move(to: point(live[i - 1]))
+                            cg.addLine(to: point(live[i]))
+                            cg.strokePath()
+                        }
+                    }
+                }
+
+                if let tip = live.last {
+                    let life = max(0, min(1, 1 - now.timeIntervalSince(tip.t) / laserFadeSeconds))
+                    guard life > 0 else { continue }
+                    let pt = point(tip)
+                    let radius = (4 * life + 2) * scale
+                    for (r, a) in [(radius * 2.2, 0.2), (radius, 1.0)] {
+                        cg.setFillColor(themeCGColor(hex: laser.color, alpha: life * a))
+                        cg.fillEllipse(in: CGRect(x: pt.x - r, y: pt.y - r, width: r * 2, height: r * 2))
+                    }
                 }
             }
+            // The stroke pass above changed the line width; restore it for
+            // anything drawn after.
+            cg.setLineWidth(CGFloat(width) / 400)
         }
     }
 

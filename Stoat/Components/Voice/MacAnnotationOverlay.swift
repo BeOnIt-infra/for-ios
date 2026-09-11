@@ -53,18 +53,11 @@ struct MacAnnotationOverlayView: View {
                 }
 
                 let now = Date()
+                let screen = CGRect(origin: .zero, size: size)
                 for (_, laser) in controller.lasers {
-                    for p in laser.points {
-                        let age = now.timeIntervalSince(p.t)
-                        guard age < laserFadeSeconds else { continue }
-                        let alpha = max(0, min(1, 1 - age / laserFadeSeconds))
-                        let radius = 5 * alpha + 3
-                        let pt = CGPoint(x: p.x * size.width, y: p.y * size.height)
-                        context.fill(
-                            Path(ellipseIn: CGRect(x: pt.x - radius, y: pt.y - radius, width: radius * 2, height: radius * 2)),
-                            with: .color(ThemeColor(hex: laser.color).color.opacity(alpha))
-                        )
-                    }
+                    // Scaled up: this covers a whole display rather than a
+                    // tile, so a trail sized for the tile would be a hairline.
+                    drawLaserTrail(&context, laser: laser, now: now, rect: screen, scale: 1.6)
                 }
             }
         }

@@ -201,6 +201,75 @@ final class AnnotationController: ObservableObject {
     }
 }
 
+/// Draws a laser as a tapering, fading streak through its recent points
+/// rather than a string of separate dots: the trail reads as one continuous
+/// beam, brightest and thickest at the tip where the pointer is now.
+///
+/// Shared by the in-app tile overlay and the Mac screen overlay so the two
+/// can't drift apart.
+func drawLaserTrail(
+    _ context: inout GraphicsContext,
+    laser: AnnotationLaser,
+    now: Date,
+    rect: CGRect,
+    scale: CGFloat = 1
+) {
+    let live = laser.points.filter { now.timeIntervalSince($0.t) < laserFadeSeconds }
+    guard live.count >= 1 else { return }
+
+    let color = ThemeColor(hex: laser.color).color
+    let point = { (p: AnnotationPoint) in
+        CGPoint(x: rect.minX + p.x * rect.width, y: rect.minY + p.y * rect.height)
+    }
+
+    // Each segment is drawn separately so width and opacity can follow the
+    // age of the trail; a single stroked path can only carry one of each.
+    if live.count >= 2 {
+        for i in 1 ..< live.count {
+            let age = now.timeIntervalSince(live[i].t)
+            let life = max(0, min(1, 1 - age / laserFadeSeconds))
+            guard life > 0 else { continue }
+
+            var segment = Path()
+            segment.move(to: point(live[i - 1]))
+            segment.addLine(to: point(live[i]))
+
+            // Glow first, then a brighter core over it -- two passes is what
+            // gives the streak its beam look rather than a flat line.
+            context.stroke(
+                segment,
+                with: .color(color.opacity(0.25 * life)),
+                style: StrokeStyle(lineWidth: (10 * life + 3) * scale, lineCap: .round, lineJoin: .round)
+            )
+            context.stroke(
+                segment,
+                with: .color(color.opacity(life)),
+                style: StrokeStyle(lineWidth: (3 * life + 1.5) * scale, lineCap: .round, lineJoin: .round)
+            )
+        }
+    }
+
+    // The tip: a dot so a stationary pointer is still visible, and so the
+    // head of a moving trail reads as the pointer itself.
+    if let tip = live.last {
+        let life = max(0, min(1, 1 - now.timeIntervalSince(tip.t) / laserFadeSeconds))
+        if life > 0 {
+            let pt = point(tip)
+            let radius = (4 * life + 2) * scale
+            context.fill(
+                Path(ellipseIn: CGRect(x: pt.x - radius * 2.2, y: pt.y - radius * 2.2,
+                                       width: radius * 4.4, height: radius * 4.4)),
+                with: .color(color.opacity(0.2 * life))
+            )
+            context.fill(
+                Path(ellipseIn: CGRect(x: pt.x - radius, y: pt.y - radius,
+                                       width: radius * 2, height: radius * 2)),
+                with: .color(color.opacity(life))
+            )
+        }
+    }
+}
+
 struct ScreenShareAnnotationOverlay: View {
     @ObservedObject var controller: AnnotationController
     var videoWidth: CGFloat
@@ -242,17 +311,7 @@ struct ScreenShareAnnotationOverlay: View {
 
                         let now = Date()
                         for (_, laser) in controller.lasers {
-                            for p in laser.points {
-                                let age = now.timeIntervalSince(p.t)
-                                guard age < laserFadeSeconds else { continue }
-                                let alpha = max(0, min(1, 1 - age / laserFadeSeconds))
-                                let radius = 5 * alpha + 3
-                                let pt = CGPoint(x: rect.minX + p.x * rect.width, y: rect.minY + p.y * rect.height)
-                                context.fill(
-                                    Path(ellipseIn: CGRect(x: pt.x - radius, y: pt.y - radius, width: radius * 2, height: radius * 2)),
-                                    with: .color(ThemeColor(hex: laser.color).color.opacity(alpha))
-                                )
-                            }
+                            drawLaserTrail(&context, laser: laser, now: now, rect: rect)
                         }
                     }
                 }
