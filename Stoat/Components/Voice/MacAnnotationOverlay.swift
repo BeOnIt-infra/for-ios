@@ -112,22 +112,34 @@ private struct SceneNamer: UIViewRepresentable {
             super.didMoveToWindow()
             guard let window, let scene = window.windowScene else { return }
             scene.title = macAnnotationOverlayWindowID
-            // The UIWindow paints its own background before AppKit ever gets
-            // a say, so making only the NSWindow transparent still leaves a
-            // solid sheet of colour over the screen.
-            window.backgroundColor = .clear
-            window.isOpaque = false
-            // SwiftUI's hosting views sit between this view and the window,
-            // and each paints its own opaque background; clearing only the
-            // window still leaves a solid sheet over the screen.
+            // Catalyst's own supported way to drop the title bar; the AppKit
+            // styleMask change covers the rest of the chrome.
+            scene.titlebar?.titleVisibility = .hidden
+            scene.titlebar?.toolbar = nil
+            clearBackgrounds()
+            MacAnnotationOverlayWindow.diag("didMoveToWindow: scene titled, starting styling")
+            MacAnnotationOverlayWindow.styleWhenReady()
+        }
+
+        // The NSWindow is already transparent (diagnostics confirmed
+        // opaque=0), so any remaining black is UIKit painting over it: the
+        // UIWindow, the hosting controller's view, and SwiftUI's own layers
+        // each carry a background. They are re-set as SwiftUI lays out, so
+        // clearing once in didMoveToWindow isn't enough.
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            clearBackgrounds()
+        }
+
+        private func clearBackgrounds() {
+            window?.rootViewController?.view.backgroundColor = .clear
+            window?.rootViewController?.view.isOpaque = false
             var view: UIView? = self
             while let current = view {
                 current.backgroundColor = .clear
                 current.isOpaque = false
                 view = current.superview
             }
-            MacAnnotationOverlayWindow.diag("didMoveToWindow: scene titled, starting styling")
-            MacAnnotationOverlayWindow.styleWhenReady()
         }
     }
 }
@@ -148,10 +160,12 @@ enum MacAnnotationOverlayWindow {
         }
     }
 
-    /// Temporary: records what the styling pass actually sees.
+    /// Temporary: records what the styling pass actually sees. Writes to a
+    /// fixed path rather than a container-relative one, since this build
+    /// isn't sandboxed and the container path guess was wrong once already.
     static func diag(_ text: String) {
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("overlay-diag.txt")
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("beonit-overlay-diag.txt")
         let line = "\(Date()): \(text)\n"
         if let handle = try? FileHandle(forWritingTo: url) {
             handle.seekToEndOfFile()
