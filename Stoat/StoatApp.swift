@@ -79,6 +79,17 @@ struct StoatApp: App {
                     }
                 }
         }
+
+        // A second window, opened only while sharing this Mac's screen, that
+        // floats the annotation strokes over every other app -- so whoever is
+        // being drawn on sees the marks where they actually are, not just
+        // inside the chat window. See MacAnnotationOverlay.swift.
+        #if targetEnvironment(macCatalyst)
+        WindowGroup(id: macAnnotationOverlayWindowID) {
+            MacAnnotationOverlayHost()
+        }
+        .windowResizability(.contentSize)
+        #endif
     }
 }
 

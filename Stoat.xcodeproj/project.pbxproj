@@ -173,6 +173,7 @@
 		DAAA4C0929F2974300F41E52 /* Http.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAA4C0829F2974300F41E52 /* Http.swift */; };
 		DAAA4C0B29F2CF1200F41E52 /* Websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAA4C0A29F2CF1200F41E52 /* Websocket.swift */; };
 		DAF84FFD2A0EFE1B00B01682 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = DAF84FFC2A0EFE1B00B01682 /* Starscream */; };
+		E6F5A8E80E2EBB81D79E1C74 /* MacAnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 355BB98C6AF8F88C78C5FD55 /* MacAnnotationOverlay.swift */; };
 		FD4721537FBB8DF8E2714B32 /* ReplayBufferRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */; };
 /* End PBXBuildFile section */
 
@@ -368,6 +369,7 @@
 		17F555262AFC229900958F2F /* ServerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerSettings.swift; sourceTree = "<group>"; };
 		17F8B7082C7983730065F1DE /* CreateServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateServer.swift; sourceTree = "<group>"; };
 		17F9D7622C9208B500D0BB6F /* MessageReactionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageReactionsSheet.swift; sourceTree = "<group>"; };
+		355BB98C6AF8F88C78C5FD55 /* MacAnnotationOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MacAnnotationOverlay.swift; sourceTree = "<group>"; };
 		68889A92D9022DB4D1140586 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlay.swift; sourceTree = "<group>"; };
@@ -825,6 +827,7 @@
 				D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */,
 				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
 				E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */,
+				355BB98C6AF8F88C78C5FD55 /* MacAnnotationOverlay.swift */,
 			);
 			path = Voice;
 			sourceTree = "<group>";
@@ -1299,6 +1302,7 @@
 				1746A4B62CAF57C300095CF3 /* GroupDMChannelPermissionsSettings.swift in Sources */,
 				17D8BACF2B211DEE005F5447 /* ChannelInfo.swift in Sources */,
 				44395BFFFA27A8739B64882E /* MacScreenShare.swift in Sources */,
+				E6F5A8E80E2EBB81D79E1C74 /* MacAnnotationOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
