@@ -13,7 +13,7 @@ import ActivityKit
 
 private func downloadImage(from url: URL) async throws -> URL? {
     guard var destination = FileManager.default.containerURL(
-        forSecurityApplicationGroupIdentifier: "group.chat.stoat.app")
+        forSecurityApplicationGroupIdentifier: "group.xyz.beonit.app")
     else { return nil }
 
     destination = destination.appendingPathComponent(url.lastPathComponent)

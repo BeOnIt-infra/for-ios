@@ -29,9 +29,9 @@
 		<string>chat.stoat.app.channel-navigation</string>
 	</array>
 	<key>RTCAppGroupIdentifier</key>
-	<string>group.chat.stoat.app</string>
+	<string>group.xyz.beonit.app</string>
 	<key>RTCScreenSharingExtension</key>
-	<string>chat.stoat.app.BroadcastExtension</string>
+	<string>xyz.beonit.app.BroadcastExtension</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
