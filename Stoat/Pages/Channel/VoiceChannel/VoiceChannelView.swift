@@ -71,6 +71,9 @@ struct VoiceChannelView: View {
 
     @State private var callAlertMessage: String?
 
+    /// Strong reference to the room delegate; see connect().
+    @State private var roomDelegate: VoiceChannelDelegate?
+
     /// Why the broadcast picker would do nothing if we asked for it, or nil
     /// when presenting should work.
     private var screenShareUnavailableReason: String? {
@@ -146,6 +149,12 @@ struct VoiceChannelView: View {
 
         let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
         let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController, replayRecorder: replayRecorder)
+        // Room keeps delegates in an NSHashTable of weak references, so a
+        // delegate that only lives in a local is deallocated the moment
+        // connect() returns and every callback silently stops: no incoming
+        // annotations, no replay buffer start/stop. Hold it for the view's
+        // lifetime.
+        roomDelegate = dele
         let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: false))
 
         try! await room.connect(url: node.public_url, token: token.token)
@@ -202,6 +211,7 @@ struct VoiceChannelView: View {
             annotationController.onSend = nil
 
             await room.disconnect()
+            roomDelegate = nil
         }
     }
     
