@@ -110,8 +110,22 @@ private struct SceneNamer: UIViewRepresentable {
     private final class NamingView: UIView {
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            guard let scene = window?.windowScene else { return }
+            guard let window, let scene = window.windowScene else { return }
             scene.title = macAnnotationOverlayWindowID
+            // The UIWindow paints its own background before AppKit ever gets
+            // a say, so making only the NSWindow transparent still leaves a
+            // solid sheet of colour over the screen.
+            window.backgroundColor = .clear
+            window.isOpaque = false
+            // SwiftUI's hosting views sit between this view and the window,
+            // and each paints its own opaque background; clearing only the
+            // window still leaves a solid sheet over the screen.
+            var view: UIView? = self
+            while let current = view {
+                current.backgroundColor = .clear
+                current.isOpaque = false
+                view = current.superview
+            }
             MacAnnotationOverlayWindow.styleWhenReady()
         }
     }
@@ -120,14 +134,15 @@ private struct SceneNamer: UIViewRepresentable {
 enum MacAnnotationOverlayWindow {
     /// Turns the scene's backing window into a pass-through heads-up layer.
     ///
-    /// Called repeatedly after the window is asked for, because the scene
-    /// connects asynchronously -- there's no callback that says "your
-    /// NSWindow exists now".
-    static func styleWhenReady(attempts: Int = 20) {
+    /// Keeps re-applying rather than stopping at the first success: the
+    /// window exists well before SwiftUI and UIKit have finished configuring
+    /// it, and whatever they do afterwards would otherwise win.
+    static func styleWhenReady(seconds: Double = 5) {
         Task { @MainActor in
-            for _ in 0 ..< attempts {
-                if style() { return }
-                try? await Task.sleep(for: .milliseconds(150))
+            let deadline = Date().addingTimeInterval(seconds)
+            while Date() < deadline {
+                style()
+                try? await Task.sleep(for: .milliseconds(200))
             }
         }
     }
@@ -136,6 +151,9 @@ enum MacAnnotationOverlayWindow {
     static func style() -> Bool {
         guard let window = overlayWindow() else { return false }
 
+        // Borderless: the scene opens as an ordinary titled window, and a
+        // title bar on a full-screen overlay is both visible and draggable.
+        window.setValue(NSNumber(value: 0), forKey: "styleMask")
         // Above normal windows and the menu bar, below the screen saver, so
         // it sits over other apps without blocking system UI outright.
         window.setValue(NSNumber(value: 1000), forKey: "level")
@@ -143,23 +161,29 @@ enum MacAnnotationOverlayWindow {
         window.setValue(NSNumber(value: true), forKey: "ignoresMouseEvents")
         window.setValue(NSNumber(value: false), forKey: "opaque")
         window.setValue(NSNumber(value: false), forKey: "hasShadow")
-        // canJoinAllSpaces | stationary | fullScreenAuxiliary -- follows the
-        // user across Spaces and survives another app going full screen,
-        // which is exactly when someone is being walked through something.
-        window.setValue(NSNumber(value: 1 | 16 | 256), forKey: "collectionBehavior")
+        window.setValue(NSNumber(value: false), forKey: "movable")
+        // This is a heads-up layer, not a document: it has no business in the
+        // Window menu, in window cycling, or as something to close.
+        window.setValue(NSNumber(value: true), forKey: "excludedFromWindowsMenu")
+        // canJoinAllSpaces | stationary | ignoresCycle | fullScreenAuxiliary
+        // -- follows the user across Spaces, survives another app going full
+        // screen (exactly when someone is being walked through something),
+        // and stays out of window cycling.
+        window.setValue(NSNumber(value: 1 | 16 | 64 | 256), forKey: "collectionBehavior")
 
         if let colorClass = NSClassFromString("NSColor") as AnyObject?,
            let clear = colorClass.perform(NSSelectorFromString("clearColor"))?.takeUnretainedValue() {
             window.setValue(clear, forKey: "backgroundColor")
         }
 
-        window.perform(NSSelectorFromString("orderFrontRegardless"))
-
-        // Cover the whole screen: a titled window opens at some default size.
+        // Cover the whole screen including the menu bar strip; a titled
+        // window opens at some arbitrary default size.
         if let screen = (window.perform(NSSelectorFromString("screen"))?.takeUnretainedValue()) as AnyObject?,
            let frameValue = screen.value(forKey: "frame") as? NSValue {
             window.setValue(frameValue, forKey: "frame")
         }
+
+        window.perform(NSSelectorFromString("orderFrontRegardless"))
         return true
     }
 
