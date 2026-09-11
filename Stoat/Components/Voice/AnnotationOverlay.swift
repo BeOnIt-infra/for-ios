@@ -67,6 +67,47 @@ final class AnnotationController: ObservableObject {
     /// Set by the room delegate wiring; publishes to LiveKit's data channel.
     var onSend: ((_ payload: [String: Any], _ reliable: Bool) -> Void)?
 
+    private var laserPruneTimer: Timer?
+
+    init() {
+        // Laser dots were only ever dropped when the next laser event
+        // arrived, and only hidden by the views re-rendering and checking
+        // each point's age. That works while something keeps redrawing --
+        // but the Mac overlay is a background, never-key window, where
+        // SwiftUI stops ticking TimelineView, so the last dots stayed frozen
+        // on screen until something else forced a redraw. Expiring them here
+        // publishes the change, which redraws every surface on its own.
+        let timer = Timer(timeInterval: 1.0 / 15.0, repeats: true) { [weak self] _ in
+            self?.pruneExpiredLasers()
+        }
+        // .common, so it keeps firing while menus or tracking loops are up.
+        RunLoop.main.add(timer, forMode: .common)
+        laserPruneTimer = timer
+    }
+
+    deinit {
+        laserPruneTimer?.invalidate()
+    }
+
+    private func pruneExpiredLasers() {
+        guard !lasers.isEmpty else { return }
+        let now = Date()
+        var next: [String: AnnotationLaser] = [:]
+        var changed = false
+        for (id, laser) in lasers {
+            var laser = laser
+            let kept = laser.points.filter { now.timeIntervalSince($0.t) < laserFadeSeconds }
+            if kept.count != laser.points.count { changed = true }
+            guard !kept.isEmpty else { continue }
+            laser.points = kept
+            next[id] = laser
+        }
+        // Only publish on a real change, so an idle call isn't invalidating
+        // the view fifteen times a second.
+        guard changed else { return }
+        lasers = next
+    }
+
     /// - Parameter senderId: identity of whoever published this event --
     ///   always the transport's view of the sender (or our own id for the
     ///   local echo), never what the payload claims.
