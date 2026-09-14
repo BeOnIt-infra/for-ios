@@ -71,6 +71,12 @@ struct VoiceChannelView: View {
 
     @State private var callAlertMessage: String?
 
+    /// Drives the "choose where to save" panel for a finished replay clip
+    /// (native Save panel on Mac via Catalyst's translation, Files picker on
+    /// iOS) -- see saveReplay() and the .fileMover modifier below.
+    @State private var pendingReplayExportURL: URL?
+    @State private var showReplayFileMover = false
+
     /// Strong reference to the room delegate; see connect().
     @State private var roomDelegate: VoiceChannelDelegate?
 
@@ -138,8 +144,13 @@ struct VoiceChannelView: View {
     #endif
 
     private func saveReplay(seconds: Int) {
-        replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { success in
-            callAlertMessage = success ? "Clip saved" : "Couldn't save clip"
+        replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { url in
+            guard let url else {
+                callAlertMessage = "Couldn't save clip"
+                return
+            }
+            pendingReplayExportURL = url
+            showReplayFileMover = true
         }
     }
 
@@ -545,6 +556,20 @@ struct VoiceChannelView: View {
             set: { shown in if !shown { callAlertMessage = nil } }
         )) {
             Button("OK", role: .cancel) {}
+        }
+        .fileMover(isPresented: $showReplayFileMover, file: pendingReplayExportURL) { result in
+            switch result {
+            case .success:
+                break // already moved to wherever the user picked
+            case .failure:
+                // Cancelled, or the move failed -- either way the temp file
+                // is still sitting at its original location; clean it up so
+                // repeated saves don't leak temp clips.
+                if let url = pendingReplayExportURL {
+                    try? FileManager.default.removeItem(at: url)
+                }
+            }
+            pendingReplayExportURL = nil
         }
     }
 }

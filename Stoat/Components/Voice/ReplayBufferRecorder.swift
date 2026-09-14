@@ -210,10 +210,14 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
 
     // MARK: Save
 
-    func saveReplay(seconds: TimeInterval, completion: @escaping (Bool) -> Void) {
+    /// Hands back the trimmed clip as a temp file for the caller to move
+    /// wherever the user picks (see VoiceChannelView's .fileMover) -- nil on
+    /// failure. This does NOT save anywhere on its own; the caller owns the
+    /// file (and cleaning it up if the user cancels the move).
+    func saveReplay(seconds: TimeInterval, completion: @escaping (URL?) -> Void) {
         queue.async { [weak self] in
             guard let self else {
-                DispatchQueue.main.async { completion(false) }
+                DispatchQueue.main.async { completion(nil) }
                 return
             }
 
@@ -251,32 +255,32 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
                 }
             } catch {
                 try? FileManager.default.removeItem(at: stagingDir)
-                DispatchQueue.main.async { completion(false) }
+                DispatchQueue.main.async { completion(nil) }
                 return
             }
 
             guard !segments.isEmpty else {
                 try? FileManager.default.removeItem(at: stagingDir)
-                DispatchQueue.main.async { completion(false) }
+                DispatchQueue.main.async { completion(nil) }
                 return
             }
 
             let clipSeconds = min(max(seconds, 1), Self.maxClipSeconds)
-            Self.exportClip(segments: segments, clipSeconds: clipSeconds) { success in
+            Self.exportClip(segments: segments, clipSeconds: clipSeconds) { url in
                 try? FileManager.default.removeItem(at: stagingDir)
-                DispatchQueue.main.async { completion(success) }
+                DispatchQueue.main.async { completion(url) }
             }
         }
     }
 
-    private static func exportClip(segments: [URL], clipSeconds: TimeInterval, completion: @escaping (Bool) -> Void) {
+    private static func exportClip(segments: [URL], clipSeconds: TimeInterval, completion: @escaping (URL?) -> Void) {
         Task {
             let composition = AVMutableComposition()
             guard let compositionTrack = composition.addMutableTrack(
                 withMediaType: .video,
                 preferredTrackID: kCMPersistentTrackID_Invalid
             ) else {
-                completion(false)
+                completion(nil)
                 return
             }
 
@@ -290,7 +294,7 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
             }
 
             guard composition.duration.seconds > 0 else {
-                completion(false)
+                completion(nil)
                 return
             }
 
@@ -313,10 +317,14 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
             guard let export = AVAssetExportSession(asset: composition, presetName: preset)
                 ?? AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality)
             else {
-                completion(false)
+                completion(nil)
                 return
             }
-            let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("beonit-clip-\(UUID().uuidString).mov")
+            // Named for the picker's benefit -- .fileMover suggests whatever
+            // this file is currently called as the default filename.
+            let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+            let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("BeOnIt-Replay-\(stamp).mov")
+            try? FileManager.default.removeItem(at: outputURL)
             export.outputURL = outputURL
             export.outputFileType = .mov
             export.timeRange = trimRange
@@ -327,25 +335,11 @@ final class ReplayBufferRecorder: NSObject, VideoRenderer, ObservableObject {
 
             guard export.status == .completed else {
                 try? FileManager.default.removeItem(at: outputURL)
-                completion(false)
+                completion(nil)
                 return
             }
 
-            let saved = await saveVideoToPhotos(url: outputURL)
-            try? FileManager.default.removeItem(at: outputURL)
-            completion(saved)
-        }
-    }
-
-    private static func saveVideoToPhotos(url: URL) async -> Bool {
-        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-        guard status == .authorized || status == .limited else { return false }
-        return await withCheckedContinuation { cont in
-            PHPhotoLibrary.shared().performChanges({
-                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-            }) { success, _ in
-                cont.resume(returning: success)
-            }
+            completion(outputURL)
         }
     }
 }
