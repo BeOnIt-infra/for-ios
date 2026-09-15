@@ -172,10 +172,16 @@ final class AnnotationController: ObservableObject {
         // publish on this topic, so a global wipe would let anyone erase
         // other people's annotations.
         case "clear":
-            // Scoped to this share as well as to the sender, so clearing one
-            // person's screen doesn't wipe what's drawn on another's.
+            // Whoever's screen is being shared may wipe it clean, marks and
+            // all -- it's their screen. Anyone else clears only what they
+            // drew themselves. Either way it is scoped to one share.
             let target = json["target"] as? String
-            strokes = strokes.filter { $0.author != senderId || ($0.target != target && target != nil) }
+            let ownerClearingOwnShare = target != nil && target == senderId
+            strokes = strokes.filter { stroke in
+                if let target, stroke.target != target { return true }
+                if ownerClearingOwnShare { return false }
+                return stroke.author != senderId
+            }
 
         default: break
         }
