@@ -314,6 +314,12 @@ struct ScreenShareAnnotationOverlay: View {
     var target: String?
     /// Fires when the capture (screenshot) toolbar button is tapped.
     var onCapture: (() -> Void)?
+    /// Fires with the requested clip length (seconds) when a replay duration
+    /// is chosen. Present on every share's toolbar -- local or remote -- so
+    /// any viewer can save the last N seconds of the share they're watching.
+    var onSaveReplay: ((Int) -> Void)?
+    /// Durations offered in the replay menu.
+    var replayDurations: [Int] = [15, 30, 60, 120]
     /// Greys the capture button out while a save is in flight. Kept separate
     /// from `onCapture` being nil, which hides the button entirely -- doing
     /// that mid-capture would shuffle the whole toolbar under the user's
@@ -430,6 +436,19 @@ struct ScreenShareAnnotationOverlay: View {
                 toolButton(systemName: "camera", selected: false, action: onCapture)
                     .disabled(captureDisabled)
                     .opacity(captureDisabled ? 0.4 : 1)
+            }
+            if let onSaveReplay {
+                Menu {
+                    ForEach(replayDurations, id: \.self) { seconds in
+                        Button(seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m") {
+                            onSaveReplay(seconds)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "film")
+                        .frame(width: 32, height: 32)
+                        .foregroundColor(.white)
+                }
             }
         }
         .padding(.horizontal, 8)

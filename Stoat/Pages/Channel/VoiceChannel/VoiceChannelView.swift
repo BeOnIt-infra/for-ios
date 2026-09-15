@@ -52,7 +52,6 @@ struct VoiceChannelView: View {
     @State var updater: Bool = false
 
     @StateObject private var annotationController = AnnotationController()
-    @StateObject private var replayRecorder = ReplayBufferRecorder()
     @State private var showReplayMenu = false
 
     /// `BroadcastManager.isBroadcastingPublisher` is computed -- it calls
@@ -64,10 +63,6 @@ struct VoiceChannelView: View {
     /// stable for the life of the view.
     @State private var broadcastPublisher = BroadcastManager.shared.isBroadcastingPublisher
 
-    /// Presets offered in the instant-replay duration menu, in seconds.
-    /// Kept in sync with ReplayBufferRecorder.maxClipSeconds (the longest
-    /// preset here bounds how much footage that buffer needs to retain).
-    private static let replayDurations: [Int] = [15, 30, 60, 120]
 
     @State private var callAlertMessage: String?
 
@@ -118,7 +113,6 @@ struct VoiceChannelView: View {
             Task {
                 await capturer.stopAndUnpublish(from: room)
                 screenSharing = false
-                replayRecorder.stop()
                 MacOverlayBridge.shared.controller = nil
                 dismissWindow(id: macAnnotationOverlayWindowID)
             }
@@ -143,16 +137,6 @@ struct VoiceChannelView: View {
     }
     #endif
 
-    private func saveReplay(seconds: Int) {
-        replayRecorder.saveReplay(seconds: TimeInterval(seconds)) { url in
-            guard let url else {
-                callAlertMessage = "Couldn't save clip"
-                return
-            }
-            pendingReplayExportURL = url
-            showReplayFileMover = true
-        }
-    }
 
     @MainActor
     func connect() async {
@@ -176,7 +160,7 @@ struct VoiceChannelView: View {
             return
         }
 
-        let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController, replayRecorder: replayRecorder)
+        let dele = VoiceChannelDelegate(updater: $updater, annotationController: annotationController)
         // Room keeps delegates in an NSHashTable of weak references, so a
         // delegate that only lives in a local is deallocated the moment
         // connect() returns and every callback silently stops: no incoming
@@ -242,7 +226,6 @@ struct VoiceChannelView: View {
                 #endif
                 screenSharing = false
             }
-            replayRecorder.stop()
             annotationController.onSend = nil
 
             await room.disconnect()
@@ -439,22 +422,6 @@ struct VoiceChannelView: View {
                                 .padding(.vertical, 8)
                         }
 
-                        if screenSharing && replayRecorder.isAvailable {
-                            Menu {
-                                ForEach(Self.replayDurations, id: \.self) { seconds in
-                                    Button {
-                                        saveReplay(seconds: seconds)
-                                    } label: {
-                                        Text(seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m")
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: "film")
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                            }
-                        }
-
                         Button { inCall.toggle() } label: {
                             Text(inCall ? "Leave Call" : "Join Call")
                                 .font(.subheadline)
@@ -537,7 +504,6 @@ struct VoiceChannelView: View {
             // or the extension itself) doesn't automatically unpublish the
             // track on its own, so that's done explicitly.
             guard !isBroadcasting else { return }
-            replayRecorder.stop()
             if let room = viewState.currentVoice,
                let publication = room.localParticipant.localVideoTracks.first(where: { $0.source == .screenShareVideo }) {
                 Task { try? await room.localParticipant.unpublish(publication: publication) }
@@ -577,12 +543,9 @@ struct VoiceChannelView: View {
 class VoiceChannelDelegate: RoomDelegate {
     @Binding var updater: Bool
     let annotationController: AnnotationController
-    let replayRecorder: ReplayBufferRecorder
-
-    init(updater: Binding<Bool>, annotationController: AnnotationController, replayRecorder: ReplayBufferRecorder) {
+    init(updater: Binding<Bool>, annotationController: AnnotationController) {
         self._updater = updater
         self.annotationController = annotationController
-        self.replayRecorder = replayRecorder
     }
     func roomDidConnect(_ room: Room) {
         print(room)
@@ -630,17 +593,11 @@ class VoiceChannelDelegate: RoomDelegate {
         print("local \(publication.kind), \(publication.source)")
         print(publication.track)
 
-        if publication.source == .screenShareVideo, let videoTrack = publication.track as? VideoTrack {
-            replayRecorder.start(track: videoTrack)
-        }
 
         self.updater.toggle()
     }
 
     func room(_ room: Room, participant: LocalParticipant, didUnpublishTrack publication: LocalTrackPublication) {
-        if publication.source == .screenShareVideo {
-            replayRecorder.stop()
-        }
 
         self.updater.toggle()
     }

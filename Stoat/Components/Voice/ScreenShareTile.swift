@@ -121,6 +121,11 @@ struct ScreenShareTile: View {
 
     @State private var frameHolder = LatestFrameHolder()
     @State private var isCapturing = false
+    // One replay buffer per tile, so a viewer can save the last N seconds of
+    // any share they're watching -- not only their own. Buffers whatever
+    // track this tile shows (local or remote).
+    @StateObject private var replay = ReplayBufferRecorder()
+    @State private var replayAlert: String?
 
     var body: some View {
         ZStack {
@@ -135,17 +140,29 @@ struct ScreenShareTile: View {
                 // two people sharing at once no longer share one canvas.
                 target: sharerIdentity,
                 onCapture: handleCapture,
+                onSaveReplay: handleSaveReplay,
                 captureDisabled: isCapturing
             )
         }
-        .onAppear { frameHolder.attach(to: videoTrack) }
+        .alert(replayAlert ?? "", isPresented: Binding(
+            get: { replayAlert != nil },
+            set: { if !$0 { replayAlert = nil } }
+        )) { Button("OK", role: .cancel) {} }
+        .onAppear { frameHolder.attach(to: videoTrack); replay.start(track: videoTrack) }
         // A participant republishing their share swaps the track under a
         // tile that never disappeared, so onAppear alone would leave the
         // holder feeding off the old, now-dead one.
         .onChange(of: ObjectIdentifier(videoTrack)) { _, _ in
             frameHolder.attach(to: videoTrack)
+            replay.start(track: videoTrack)
         }
-        .onDisappear { frameHolder.detach() }
+        .onDisappear { frameHolder.detach(); replay.stop() }
+    }
+
+    private func handleSaveReplay(seconds: Int) {
+        replay.saveReplay(seconds: TimeInterval(seconds)) { url in
+            replayAlert = url != nil ? "Clip saved" : "Couldn't save clip"
+        }
     }
 
     private func handleCapture() {
