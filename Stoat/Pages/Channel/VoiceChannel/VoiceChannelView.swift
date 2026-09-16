@@ -48,6 +48,7 @@ struct VoiceChannelView: View {
     @State var unmuted: Bool = false
     @State var defeaned: Bool = false
     @State var screenSharing: Bool = false
+    @State var showWhiteboard: Bool = false
     @State var inCall: Bool = false
     @State var updater: Bool = false
 
@@ -191,7 +192,16 @@ struct VoiceChannelView: View {
                 )
             }
         }
-        
+        WhiteboardBridge.shared.onSend = { [weak room] data in
+            guard let room else { return }
+            Task {
+                try? await room.localParticipant.publish(
+                    data: data,
+                    options: DataPublishOptions(topic: "whiteboard", reliable: true)
+                )
+            }
+        }
+
 //        let pfp = URL(string: viewState.currentUser!.avatar != nil ? viewState.formatUrl(with: viewState.currentUser!.avatar!) : "\(viewState.http.baseURL)/users/\(viewState.currentUser!.id)/default_avatar")!;
         
         //        activity = try! Activity.request(
@@ -227,6 +237,7 @@ struct VoiceChannelView: View {
                 screenSharing = false
             }
             annotationController.onSend = nil
+            WhiteboardBridge.shared.onSend = nil
 
             await room.disconnect()
             roomDelegate = nil
@@ -285,6 +296,11 @@ struct VoiceChannelView: View {
             }
             
             VStack {
+                if showWhiteboard {
+                    WhiteboardView(baseURL: viewState.apiInfo?.app)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal, 16)
+                } else {
                 ScrollView {
                     if let room = viewState.currentVoice {
                         RoomScope(room: room) {
@@ -366,7 +382,8 @@ struct VoiceChannelView: View {
                     }
                 }
                 .contentMargins(.top, 16, for: .scrollContent)
-                
+                }
+
                 //Spacer()
                 
                 HStack(spacing: 12) {
@@ -418,6 +435,18 @@ struct VoiceChannelView: View {
                             #endif
                         } label: {
                             Image(systemName: screenSharing ? "desktopcomputer.and.arrow.down" : "desktopcomputer")
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                        }
+
+                        // Shared whiteboard: swaps the video grid for the
+                        // tldraw editor (see WhiteboardView); strokes sync over
+                        // the "whiteboard" data-channel topic for everyone.
+                        Button {
+                            guard inCall else { return }
+                            showWhiteboard.toggle()
+                        } label: {
+                            Image(systemName: showWhiteboard ? "pencil.and.outline" : "pencil.tip.crop.circle")
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                         }
@@ -552,6 +581,10 @@ class VoiceChannelDelegate: RoomDelegate {
     }
 
     func room(_ room: Room, participant: RemoteParticipant?, didReceiveData data: Data, forTopic topic: String, encryptionType: EncryptionType) {
+        if topic == "whiteboard" {
+            WhiteboardBridge.shared.handleIncoming(data)
+            return
+        }
         guard topic == "annotate" else { return }
         // Without a verified sender the annotation can't be attributed to
         // anyone, so drop it rather than trusting the payload.
