@@ -156,6 +156,7 @@
 		36D461CF77D84B97B94929A9 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 03268FCCFC7D4D1F8B6E9F6F /* Sentry */; };
 		44395BFFFA27A8739B64882E /* MacScreenShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */; };
 		54F3FCCB8CE74446393DAA27 /* AnnotationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */; };
+		4074FC9907310ACE9F26DA79 /* Whiteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A69E5C687C86C135EB595BE4 /* Whiteboard.swift */; };
 		61C7F26C22DA29258396093D /* BroadcastHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007FE95D4B0296D7FA94D87D /* BroadcastHandler.swift */; };
 		6522088D4B027FDC879DB254 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 139FEB90F0B54A9966646840 /* LiveKit */; };
 		96CAA073B2CA58F1A86FD29E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68889A92D9022DB4D1140586 /* Foundation.framework */; };
@@ -373,6 +374,7 @@
 		68889A92D9022DB4D1140586 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		691CD5464B4B7B2D09B21745 /* BroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DD3660C154359006CA80D49 /* AnnotationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlay.swift; sourceTree = "<group>"; };
+		A69E5C687C86C135EB595BE4 /* Whiteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Whiteboard.swift; sourceTree = "<group>"; };
 		D110BF1CAB54BD2CC100AA21 /* ReplayBufferRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayBufferRecorder.swift; sourceTree = "<group>"; };
 		D49B704F29C4D3FE009494A5 /* Stoat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stoat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D49B705229C4D3FE009494A5 /* StoatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoatApp.swift; sourceTree = "<group>"; };
@@ -828,6 +830,7 @@
 				0C2582C155CA0B8349C36DBA /* ScreenShareTile.swift */,
 				E4C7C7A917B9471AFBC4A268 /* MacScreenShare.swift */,
 				355BB98C6AF8F88C78C5FD55 /* MacAnnotationOverlay.swift */,
+				A69E5C687C86C135EB595BE4 /* Whiteboard.swift */,
 			);
 			path = Voice;
 			sourceTree = "<group>";
@@ -1303,6 +1306,7 @@
 				17D8BACF2B211DEE005F5447 /* ChannelInfo.swift in Sources */,
 				44395BFFFA27A8739B64882E /* MacScreenShare.swift in Sources */,
 				E6F5A8E80E2EBB81D79E1C74 /* MacAnnotationOverlay.swift in Sources */,
+				4074FC9907310ACE9F26DA79 /* Whiteboard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
