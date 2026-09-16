@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftUI
-import CodableWrapper
 import Parsing
 import Types
 import Sentry
@@ -504,8 +503,7 @@ func convertColorTypeToString(input: ColorType) -> String {
     }
 }
 
-@Codable
-public struct ThemeColor: Equatable, ShapeStyle, View {
+public struct ThemeColor: Codable, Equatable, ShapeStyle, View {
     public var r: Double
     public var g: Double
     public var b: Double
@@ -567,7 +565,6 @@ public struct ThemeColor: Equatable, ShapeStyle, View {
     public static var black: ThemeColor = ThemeColor(hex: "#000000FF")
 }
 
-@Codable
 public struct Theme: Codable, Equatable {
     public var accent: ThemeColor = ThemeColor(hex: "#FD6671FF")
     public var background: ThemeColor = ThemeColor(hex: "#F6F6F6FF")
@@ -620,6 +617,40 @@ public struct Theme: Codable, Equatable {
             mention: ThemeColor(hex: "#FBFF000F"),
             shouldFollowiOSTheme: false
         )
+    }
+}
+
+// Hand-written in place of the `@Codable` macro (CodableWrapper), which fails
+// to expand under this toolchain's swift-syntax version -- see the build
+// handoff doc. This reproduces the macro's "missing JSON key -> use the
+// property's default" decoding behavior, which the plain synthesized Codable
+// conformance does not provide (it throws on a missing key), and which
+// matters here since themes may be only partially specified. `encode(to:)`
+// is left to synthesis since all defaults are decode-only concerns.
+extension Theme {
+    enum CodingKeys: String, CodingKey {
+        case accent, background, background2, background3, background4
+        case foreground, foreground2, foreground3
+        case messageBox, topBar, error, success, mention
+        case shouldFollowiOSTheme
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accent = try container.decodeIfPresent(ThemeColor.self, forKey: .accent) ?? ThemeColor(hex: "#FD6671FF")
+        background = try container.decodeIfPresent(ThemeColor.self, forKey: .background) ?? ThemeColor(hex: "#F6F6F6FF")
+        background2 = try container.decodeIfPresent(ThemeColor.self, forKey: .background2) ?? ThemeColor(hex: "#FFFFFFFF")
+        background3 = try container.decodeIfPresent(ThemeColor.self, forKey: .background3) ?? ThemeColor(hex: "#F1F1F1FF")
+        background4 = try container.decodeIfPresent(ThemeColor.self, forKey: .background4) ?? ThemeColor(hex: "#4D4D4DFF")
+        foreground = try container.decodeIfPresent(ThemeColor.self, forKey: .foreground) ?? ThemeColor(hex: "#000000FF")
+        foreground2 = try container.decodeIfPresent(ThemeColor.self, forKey: .foreground2) ?? ThemeColor(hex: "#1F1F1FFF")
+        foreground3 = try container.decodeIfPresent(ThemeColor.self, forKey: .foreground3) ?? ThemeColor(hex: "#3A3A3AFF")
+        messageBox = try container.decodeIfPresent(ThemeColor.self, forKey: .messageBox) ?? ThemeColor(hex: "#F1F1F1FF")
+        topBar = try container.decodeIfPresent(ThemeColor.self, forKey: .topBar) ?? ThemeColor(hex: "#FFFFFFEE")
+        error = try container.decodeIfPresent(ThemeColor.self, forKey: .error) ?? ThemeColor(hex: "#ED4245")
+        success = try container.decodeIfPresent(ThemeColor.self, forKey: .success) ?? ThemeColor(hex: "#91b362")
+        mention = try container.decodeIfPresent(ThemeColor.self, forKey: .mention) ?? ThemeColor(hex: "#FBFF000F")
+        shouldFollowiOSTheme = try container.decodeIfPresent(Bool.self, forKey: .shouldFollowiOSTheme) ?? false
     }
 }
 
