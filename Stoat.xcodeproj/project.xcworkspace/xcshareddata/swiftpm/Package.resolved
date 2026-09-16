@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/winddpan/CodableWrapper",
       "state" : {
-        "revision" : "eb90d37dbdf4ea437d6f86b874bac1e6da75f1b4",
-        "version" : "1.1.2"
+        "revision" : "3dc01e9fc1048966cc50608cc2bcfbaff48dcaad",
+        "version" : "1.1.7"
       }
     },
     {
@@ -185,8 +185,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
-        "revision" : "0687f71944021d616d34d922343dcef086855920",
-        "version" : "600.0.1"
+        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
+        "version" : "601.0.1"
       }
     },
     {
