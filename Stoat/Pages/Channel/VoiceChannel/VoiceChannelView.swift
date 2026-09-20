@@ -197,7 +197,7 @@ struct VoiceChannelView: View {
             Task {
                 try? await room.localParticipant.publish(
                     data: data,
-                    options: DataPublishOptions(topic: "whiteboard", reliable: true)
+                    options: DataPublishOptions(topic: "whiteboard-link", reliable: true)
                 )
             }
         }
@@ -237,7 +237,11 @@ struct VoiceChannelView: View {
                 screenSharing = false
             }
             annotationController.onSend = nil
-            WhiteboardBridge.shared.onSend = nil
+            // The board belonged to the call that just ended; leaving it on
+            // screen would show an empty frame waiting for a board id that is
+            // never coming.
+            showWhiteboard = false
+            WhiteboardBridge.shared.end()
 
             await room.disconnect()
             roomDelegate = nil
@@ -297,7 +301,10 @@ struct VoiceChannelView: View {
             
             VStack {
                 if showWhiteboard {
-                    WhiteboardView(baseURL: viewState.apiInfo?.app)
+                    WhiteboardView(
+                        boardUrl: DEFAULT_BOARD_URL,
+                        displayName: viewState.currentUser?.display_name ?? viewState.currentUser?.username
+                    )
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal, 16)
                 } else {
@@ -440,8 +447,9 @@ struct VoiceChannelView: View {
                         }
 
                         // Shared whiteboard: swaps the video grid for the
-                        // tldraw editor (see WhiteboardView); strokes sync over
-                        // the "whiteboard" data-channel topic for everyone.
+                        // board page (see WhiteboardView). Which board the call
+                        // is on is agreed over the "whiteboard-link" topic; the
+                        // drawing itself syncs through the board's own room.
                         Button {
                             guard inCall else { return }
                             showWhiteboard.toggle()
@@ -581,7 +589,7 @@ class VoiceChannelDelegate: RoomDelegate {
     }
 
     func room(_ room: Room, participant: RemoteParticipant?, didReceiveData data: Data, forTopic topic: String, encryptionType: EncryptionType) {
-        if topic == "whiteboard" {
+        if topic == "whiteboard-link" {
             WhiteboardBridge.shared.handleIncoming(data)
             return
         }

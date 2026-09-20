@@ -654,11 +654,14 @@ struct MessageWrapper<C: View>: View {
                 }
                 
                 Button {
+                    // The deployment this client is signed in to, not the
+                    // upstream public one: a link to stoat.chat is a link to
+                    // somebody else's server, where this message doesn't exist.
+                    let app = viewState.apiInfo?.app ?? DEFAULT_APP_URL
                     if let server = viewModel.server {
-                        copyUrl(url: URL(string: "https://stoat.chat/server/\(server.id)/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
+                        copyUrl(url: URL(string: "\(app)/server/\(server.id)/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
                     } else {
-                        copyUrl(url: URL(string: "https://stoat.chat/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
-                        
+                        copyUrl(url: URL(string: "\(app)/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
                     }
                 } label: {
                     Label("Copy Message Link", systemImage: "link")

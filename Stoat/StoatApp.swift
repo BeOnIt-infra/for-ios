@@ -2,7 +2,15 @@ import SwiftUI
 import Sentry
 import Types
 
-let DEFAULT_API_URL: String = "https://api.stoat.chat"
+let DEFAULT_API_URL: String = "https://meet.beonit.xyz/api"
+/// Where the web client lives, for links this app hands to a person rather
+/// than calls itself. The API reports its own (`apiInfo.app`) once connected;
+/// this covers the moment before that, and the case of it not being set.
+let DEFAULT_APP_URL: String = "https://meet.beonit.xyz"
+/// Where the shared whiteboard is served from. It is a separate deployment
+/// from the chat API -- the same one the desktop and web clients frame -- and
+/// the board it opens is reachable by link without signing in.
+let DEFAULT_BOARD_URL: String = "https://call.beonit.xyz"
 
 @main
 struct StoatApp: App {
